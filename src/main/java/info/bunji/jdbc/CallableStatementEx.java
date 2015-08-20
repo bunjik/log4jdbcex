@@ -1,0 +1,1064 @@
+/*
+ * Copyright 2015 Fumiharu Kinoshita
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package info.bunji.jdbc;
+
+import java.io.InputStream;
+import java.io.Reader;
+import java.math.BigDecimal;
+import java.net.URL;
+import java.sql.Array;
+import java.sql.Blob;
+import java.sql.CallableStatement;
+import java.sql.Clob;
+import java.sql.DatabaseMetaData;
+import java.sql.Date;
+import java.sql.NClob;
+import java.sql.Ref;
+import java.sql.ResultSet;
+import java.sql.RowId;
+import java.sql.SQLException;
+import java.sql.SQLXML;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ *
+ * @author f.kinoshita
+ */
+public class CallableStatementEx extends PreparedStatementEx implements CallableStatement {
+
+	private CallableStatement stmt;
+
+	/** プロシージャのパラメータ名を保持するMap */
+	private static Map<String, Map<String,Integer>> procedureInfo = new HashMap<String, Map<String,Integer>>();
+
+	/** プロシージャ名を抽出する正規表現 */
+	protected static final Pattern PROC_PATTERN = Pattern.compile("call (.*)\\(", Pattern.CASE_INSENSITIVE);
+
+	/**
+	 * パラメータ名から項目のインデックスを取得する
+	 *
+	 * ※非効率な処理だが、名称で指定することはあまりないかも？
+	 *
+	 * @param colName
+	 * @return パラメータ名に対応するインデックス値。取得できなかった場合は-1を返す
+	 */
+	public int getParameterIndex(String colName) {
+//	protected int getParameterIndex(String colName) {
+		// プロシージャ名を抽出する
+		Matcher matcher = PROC_PATTERN.matcher(getSql());
+		if (!matcher.find()) {
+			// 抽出できなかった場合
+			return -1;
+		}
+		String procName = matcher.group(1).trim();
+
+		String name = procName;
+		if (!procedureInfo.containsKey(procName)) {
+			// 未取得の場合は情報を取得する
+			try {
+				String catalog = null;
+				int pos = procName.indexOf(".");
+				if (pos != -1) {
+					catalog = procName.substring(0, pos).toUpperCase();
+					pos = procName.lastIndexOf(".");
+					name = procName.substring(pos + 1);
+				} else {
+					catalog = connEx.getRealConnection().getCatalog();
+				}
+
+				Map<String,Integer> procInfo = new HashMap<String,Integer>();
+				DatabaseMetaData meta = connEx.getRealConnection().getMetaData();
+//				ResultSet rs = meta.getProcedureColumns(catalog, null, name, "%");
+				ResultSet rs = meta.getProcedureColumns(catalog, null, name.toUpperCase(), "%");
+				while (rs.next()) {
+					// パラメータ名をキーにインデックスを保持する
+					procInfo.put(rs.getString("COLUMN_NAME").toUpperCase(), rs.getInt("ORDINAL_POSITION"));
+				}
+				procedureInfo.put(name, procInfo);
+				rs.close();
+			} catch (SQLException sqle) {
+				// do nothting.
+			}
+		}
+
+		// カラム名からインデックス値を取得する
+		Map<String,Integer> colInfo = procedureInfo.get(procName);
+		if (colInfo != null) {
+			Integer index = colInfo.get(colName.toUpperCase());
+			return index != null ? index.intValue() : -1;
+		}
+		return -1;
+	}
+
+	/**
+	 ********************************************
+	 * コンストラクタ
+	 * @param conn
+	 * @param statement
+	 ********************************************
+	 */
+	public CallableStatementEx(ConnectionEx connEx, String sql, CallableStatement statement) {
+		super(connEx, sql, statement);
+		this.stmt = statement;
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#registerOutParameter(int, int)
+	 */
+	@Override
+	public void registerOutParameter(int parameterIndex, int sqlType) throws SQLException {
+		stmt.registerOutParameter(parameterIndex, sqlType);
+		addParameter(parameterIndex, sqlType, "(OUT)");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#registerOutParameter(int, int, int)
+	 */
+	@Override
+	public void registerOutParameter(int parameterIndex, int sqlType, int scale) throws SQLException {
+		stmt.registerOutParameter(parameterIndex, sqlType, scale);
+		addParameter(parameterIndex, sqlType, "(OUT)");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#wasNull()
+	 */
+	@Override
+	public boolean wasNull() throws SQLException {
+		return stmt.wasNull();
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getString(int)
+	 */
+	@Override
+	public String getString(int parameterIndex) throws SQLException {
+		return stmt.getString(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getBoolean(int)
+	 */
+	@Override
+	public boolean getBoolean(int parameterIndex) throws SQLException {
+		return stmt.getBoolean(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getByte(int)
+	 */
+	@Override
+	public byte getByte(int parameterIndex) throws SQLException {
+		return stmt.getByte(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getShort(int)
+	 */
+	@Override
+	public short getShort(int parameterIndex) throws SQLException {
+		return stmt.getShort(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getInt(int)
+	 */
+	@Override
+	public int getInt(int parameterIndex) throws SQLException {
+		return stmt.getInt(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getLong(int)
+	 */
+	@Override
+	public long getLong(int parameterIndex) throws SQLException {
+		return stmt.getLong(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getFloat(int)
+	 */
+	@Override
+	public float getFloat(int parameterIndex) throws SQLException {
+		return stmt.getFloat(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getDouble(int)
+	 */
+	@Override
+	public double getDouble(int parameterIndex) throws SQLException {
+		return stmt.getDouble(parameterIndex);
+	}
+
+	/**
+	 * @see java.sql.CallableStatement#getBigDecimal(int, int)
+	 * @deprecated
+	 */
+	@Override
+	public BigDecimal getBigDecimal(int parameterIndex, int scale) throws SQLException {
+		return stmt.getBigDecimal(parameterIndex, scale);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getBytes(int)
+	 */
+	@Override
+	public byte[] getBytes(int parameterIndex) throws SQLException {
+		return stmt.getBytes(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getDate(int)
+	 */
+	@Override
+	public Date getDate(int parameterIndex) throws SQLException {
+		return stmt.getDate(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getTime(int)
+	 */
+	@Override
+	public Time getTime(int parameterIndex) throws SQLException {
+		return stmt.getTime(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getTimestamp(int)
+	 */
+	@Override
+	public Timestamp getTimestamp(int parameterIndex) throws SQLException {
+		return stmt.getTimestamp(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getObject(int)
+	 */
+	@Override
+	public Object getObject(int parameterIndex) throws SQLException {
+		return stmt.getObject(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getBigDecimal(int)
+	 */
+	@Override
+	public BigDecimal getBigDecimal(int parameterIndex) throws SQLException {
+		return stmt.getBigDecimal(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getObject(int, java.util.Map)
+	 */
+	@Override
+	public Object getObject(int parameterIndex, Map<String, Class<?>> map) throws SQLException {
+		return stmt.getObject(parameterIndex, map);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getRef(int)
+	 */
+	@Override
+	public Ref getRef(int parameterIndex) throws SQLException {
+		return stmt.getRef(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getBlob(int)
+	 */
+	@Override
+	public Blob getBlob(int parameterIndex) throws SQLException {
+		return stmt.getBlob(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getClob(int)
+	 */
+	@Override
+	public Clob getClob(int parameterIndex) throws SQLException {
+		return stmt.getClob(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getArray(int)
+	 */
+	@Override
+	public Array getArray(int parameterIndex) throws SQLException {
+		return stmt.getArray(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getDate(int, java.util.Calendar)
+	 */
+	@Override
+	public Date getDate(int parameterIndex, Calendar cal) throws SQLException {
+		return stmt.getDate(parameterIndex, cal);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getTime(int, java.util.Calendar)
+	 */
+	@Override
+	public Time getTime(int parameterIndex, Calendar cal) throws SQLException {
+		return stmt.getTime(parameterIndex, cal);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getTimestamp(int, java.util.Calendar)
+	 */
+	@Override
+	public Timestamp getTimestamp(int parameterIndex, Calendar cal) throws SQLException {
+		return stmt.getTimestamp(parameterIndex, cal);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#registerOutParameter(int, int, java.lang.String)
+	 */
+	@Override
+	public void registerOutParameter(int parameterIndex, int sqlType, String typeName) throws SQLException {
+		stmt.registerOutParameter(parameterIndex, sqlType, typeName);
+		addParameter(parameterIndex, sqlType, "(OUT)");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#registerOutParameter(java.lang.String, int)
+	 */
+	@Override
+	public void registerOutParameter(String parameterName, int sqlType) throws SQLException {
+		stmt.registerOutParameter(parameterName, sqlType);
+		addParameter(getParameterIndex(parameterName), sqlType, "(OUT)");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#registerOutParameter(java.lang.String, int, int)
+	 */
+	@Override
+	public void registerOutParameter(String parameterName, int sqlType, int scale) throws SQLException {
+		stmt.registerOutParameter(parameterName, sqlType, scale);
+		addParameter(getParameterIndex(parameterName), sqlType, "(OUT)");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#registerOutParameter(java.lang.String, int, java.lang.String)
+	 */
+	@Override
+	public void registerOutParameter(String parameterName, int sqlType, String typeName) throws SQLException {
+		stmt.registerOutParameter(parameterName, sqlType, typeName);
+		addParameter(getParameterIndex(parameterName), sqlType, "(OUT)");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getURL(int)
+	 */
+	@Override
+	public URL getURL(int parameterIndex) throws SQLException {
+		return stmt.getURL(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setURL(java.lang.String, java.net.URL)
+	 */
+	@Override
+	public void setURL(String parameterName, URL val) throws SQLException {
+		stmt.setURL(parameterName, val);
+		addParameter(getParameterIndex(parameterName), Types.JAVA_OBJECT, val);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setNull(java.lang.String, int)
+	 */
+	@Override
+	public void setNull(String parameterName, int sqlType) throws SQLException {
+		stmt.setNull(parameterName, sqlType);
+		addParameter(getParameterIndex(parameterName), sqlType, null);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setBoolean(java.lang.String, boolean)
+	 */
+	@Override
+	public void setBoolean(String parameterName, boolean x) throws SQLException {
+		stmt.setBoolean(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.BOOLEAN, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setByte(java.lang.String, byte)
+	 */
+	@Override
+	public void setByte(String parameterName, byte x) throws SQLException {
+		stmt.setByte(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.TINYINT, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setShort(java.lang.String, short)
+	 */
+	@Override
+	public void setShort(String parameterName, short x) throws SQLException {
+		stmt.setShort(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.SMALLINT, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setInt(java.lang.String, int)
+	 */
+	@Override
+	public void setInt(String parameterName, int x) throws SQLException {
+		stmt.setInt(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.INTEGER, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setLong(java.lang.String, long)
+	 */
+	@Override
+	public void setLong(String parameterName, long x) throws SQLException {
+		stmt.setLong(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.BIGINT, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setFloat(java.lang.String, float)
+	 */
+	@Override
+	public void setFloat(String parameterName, float x) throws SQLException {
+		stmt.setFloat(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.FLOAT, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setDouble(java.lang.String, double)
+	 */
+	@Override
+	public void setDouble(String parameterName, double x) throws SQLException {
+		stmt.setDouble(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.DOUBLE, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setBigDecimal(java.lang.String, java.math.BigDecimal)
+	 */
+	@Override
+	public void setBigDecimal(String parameterName, BigDecimal x) throws SQLException {
+		stmt.setBigDecimal(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.NUMERIC, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setString(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public void setString(String parameterName, String x) throws SQLException {
+		stmt.setString(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.CHAR, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setBytes(java.lang.String, byte[])
+	 */
+	@Override
+	public void setBytes(String parameterName, byte[] x) throws SQLException {
+		stmt.setBytes(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.BINARY, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setDate(java.lang.String, java.sql.Date)
+	 */
+	@Override
+	public void setDate(String parameterName, Date x) throws SQLException {
+		stmt.setDate(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.DATE, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setTime(java.lang.String, java.sql.Time)
+	 */
+	@Override
+	public void setTime(String parameterName, Time x) throws SQLException {
+		stmt.setTime(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.TIME, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setTimestamp(java.lang.String, java.sql.Timestamp)
+	 */
+	@Override
+	public void setTimestamp(String parameterName, Timestamp x) throws SQLException {
+		stmt.setTimestamp(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.TIMESTAMP, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setAsciiStream(java.lang.String, java.io.InputStream, int)
+	 */
+	@Override
+	public void setAsciiStream(String parameterName, InputStream x, int length) throws SQLException {
+		stmt.setAsciiStream(parameterName, x, length);
+		addParameter(getParameterIndex(parameterName), Types.JAVA_OBJECT, "(AsciiStream[len=" + length + "])");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setBinaryStream(java.lang.String, java.io.InputStream, int)
+	 */
+	@Override
+	public void setBinaryStream(String parameterName, InputStream x, int length)
+			throws SQLException {
+		stmt.setBinaryStream(parameterName, x, length);
+		addParameter(getParameterIndex(parameterName), Types.JAVA_OBJECT, "(BinaryStream[len=" + length + "])");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setObject(java.lang.String, java.lang.Object, int, int)
+	 */
+	@Override
+	public void setObject(String parameterName, Object x, int targetSqlType, int scale) throws SQLException {
+		stmt.setObject(parameterName, x, targetSqlType, scale);
+		addParameter(getParameterIndex(parameterName), Types.JAVA_OBJECT, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setObject(java.lang.String, java.lang.Object, int)
+	 */
+	@Override
+	public void setObject(String parameterName, Object x, int targetSqlType) throws SQLException {
+		stmt.setObject(parameterName, x, targetSqlType);
+		addParameter(getParameterIndex(parameterName), Types.JAVA_OBJECT, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setObject(java.lang.String, java.lang.Object)
+	 */
+	@Override
+	public void setObject(String parameterName, Object x) throws SQLException {
+		stmt.setObject(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.JAVA_OBJECT, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setCharacterStream(java.lang.String, java.io.Reader, int)
+	 */
+	@Override
+	public void setCharacterStream(String parameterName, Reader reader, int length) throws SQLException {
+		stmt.setCharacterStream(parameterName, reader, length);
+		addParameter(getParameterIndex(parameterName), Types.JAVA_OBJECT, "(CharacterStream[len=" + length + "])");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setDate(java.lang.String, java.sql.Date, java.util.Calendar)
+	 */
+	@Override
+	public void setDate(String parameterName, Date x, Calendar cal) throws SQLException {
+		stmt.setDate(parameterName, x, cal);
+		addParameter(getParameterIndex(parameterName), Types.DATE, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setTime(java.lang.String, java.sql.Time, java.util.Calendar)
+	 */
+	@Override
+	public void setTime(String parameterName, Time x, Calendar cal) throws SQLException {
+		stmt.setTime(parameterName, x, cal);
+		addParameter(getParameterIndex(parameterName), Types.TIME, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setTimestamp(java.lang.String, java.sql.Timestamp, java.util.Calendar)
+	 */
+	@Override
+	public void setTimestamp(String parameterName, Timestamp x, Calendar cal) throws SQLException {
+		stmt.setTimestamp(parameterName, x, cal);
+		addParameter(getParameterIndex(parameterName), Types.TIMESTAMP, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setNull(java.lang.String, int, java.lang.String)
+	 */
+	@Override
+	public void setNull(String parameterName, int sqlType, String typeName) throws SQLException {
+		stmt.setNull(parameterName, sqlType, typeName);
+		addParameter(getParameterIndex(parameterName), Types.NULL, null);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getString(java.lang.String)
+	 */
+	@Override
+	public String getString(String parameterName) throws SQLException {
+		return stmt.getString(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getBoolean(java.lang.String)
+	 */
+	@Override
+	public boolean getBoolean(String parameterName) throws SQLException {
+		return stmt.getBoolean(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getByte(java.lang.String)
+	 */
+	@Override
+	public byte getByte(String parameterName) throws SQLException {
+		return stmt.getByte(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getShort(java.lang.String)
+	 */
+	@Override
+	public short getShort(String parameterName) throws SQLException {
+		return stmt.getShort(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getInt(java.lang.String)
+	 */
+	@Override
+	public int getInt(String parameterName) throws SQLException {
+		return stmt.getInt(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getLong(java.lang.String)
+	 */
+	@Override
+	public long getLong(String parameterName) throws SQLException {
+		return stmt.getLong(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getFloat(java.lang.String)
+	 */
+	@Override
+	public float getFloat(String parameterName) throws SQLException {
+		return stmt.getFloat(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getDouble(java.lang.String)
+	 */
+	@Override
+	public double getDouble(String parameterName) throws SQLException {
+		return stmt.getDouble(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getBytes(java.lang.String)
+	 */
+	@Override
+	public byte[] getBytes(String parameterName) throws SQLException {
+		return stmt.getBytes(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getDate(java.lang.String)
+	 */
+	@Override
+	public Date getDate(String parameterName) throws SQLException {
+		return stmt.getDate(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getTime(java.lang.String)
+	 */
+	@Override
+	public Time getTime(String parameterName) throws SQLException {
+		return stmt.getTime(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getTimestamp(java.lang.String)
+	 */
+	@Override
+	public Timestamp getTimestamp(String parameterName) throws SQLException {
+		return stmt.getTimestamp(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getObject(java.lang.String)
+	 */
+	@Override
+	public Object getObject(String parameterName) throws SQLException {
+		return stmt.getObject(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getBigDecimal(java.lang.String)
+	 */
+	@Override
+	public BigDecimal getBigDecimal(String parameterName) throws SQLException {
+		return stmt.getBigDecimal(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getObject(java.lang.String, java.util.Map)
+	 */
+	@Override
+	public Object getObject(String parameterName, Map<String, Class<?>> map) throws SQLException {
+		return stmt.getObject(parameterName, map);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getRef(java.lang.String)
+	 */
+	@Override
+	public Ref getRef(String parameterName) throws SQLException {
+		return stmt.getRef(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getBlob(java.lang.String)
+	 */
+	@Override
+	public Blob getBlob(String parameterName) throws SQLException {
+		return stmt.getBlob(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getClob(java.lang.String)
+	 */
+	@Override
+	public Clob getClob(String parameterName) throws SQLException {
+		return stmt.getClob(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getArray(java.lang.String)
+	 */
+	@Override
+	public Array getArray(String parameterName) throws SQLException {
+		return stmt.getArray(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getDate(java.lang.String, java.util.Calendar)
+	 */
+	@Override
+	public Date getDate(String parameterName, Calendar cal) throws SQLException {
+		return stmt.getDate(parameterName, cal);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getTime(java.lang.String, java.util.Calendar)
+	 */
+	@Override
+	public Time getTime(String parameterName, Calendar cal) throws SQLException {
+		return stmt.getTime(parameterName, cal);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getTimestamp(java.lang.String, java.util.Calendar)
+	 */
+	@Override
+	public Timestamp getTimestamp(String parameterName, Calendar cal) throws SQLException {
+		return stmt.getTimestamp(parameterName, cal);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getURL(java.lang.String)
+	 */
+	@Override
+	public URL getURL(String parameterName) throws SQLException {
+		return stmt.getURL(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getRowId(int)
+	 */
+	@Override
+	public RowId getRowId(int parameterIndex) throws SQLException {
+		return stmt.getRowId(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getRowId(java.lang.String)
+	 */
+	@Override
+	public RowId getRowId(String parameterName) throws SQLException {
+		return stmt.getRowId(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setRowId(java.lang.String, java.sql.RowId)
+	 */
+	@Override
+	public void setRowId(String parameterName, RowId x) throws SQLException {
+		stmt.setRowId(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.ROWID, x.toString());
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setNString(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public void setNString(String parameterName, String value) throws SQLException {
+		stmt.setNString(parameterName, value);
+		addParameter(getParameterIndex(parameterName), Types.NCHAR, value);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setNCharacterStream(java.lang.String, java.io.Reader, long)
+	 */
+	@Override
+	public void setNCharacterStream(String parameterName, Reader value, long length) throws SQLException {
+		stmt.setNCharacterStream(parameterName, value, length);
+		addParameter(getParameterIndex(parameterName), Types.JAVA_OBJECT, "(NCharacterStream[len=" + length+ "])");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setNClob(java.lang.String, java.sql.NClob)
+	 */
+	@Override
+	public void setNClob(String parameterName, NClob value) throws SQLException {
+		stmt.setNClob(parameterName, value);
+		addParameter(getParameterIndex(parameterName), Types.NCLOB, value);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setClob(java.lang.String, java.io.Reader, long)
+	 */
+	@Override
+	public void setClob(String parameterName, Reader reader, long length) throws SQLException {
+		stmt.setNClob(parameterName, reader, length);
+		addParameter(getParameterIndex(parameterName), Types.CLOB, "(Clob[len" + length+ "])");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setBlob(java.lang.String, java.io.InputStream, long)
+	 */
+	@Override
+	public void setBlob(String parameterName, InputStream inputStream, long length) throws SQLException {
+		stmt.setBlob(parameterName, inputStream, length);
+		addParameter(getParameterIndex(parameterName), Types.BLOB, "(Blob[len" + length+ "])");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setNClob(java.lang.String, java.io.Reader, long)
+	 */
+	@Override
+	public void setNClob(String parameterName, Reader reader, long length) throws SQLException {
+		stmt.setNClob(parameterName, reader, length);
+		addParameter(getParameterIndex(parameterName), Types.NCLOB, "(NClob[len" + length+ "])");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getNClob(int)
+	 */
+	@Override
+	public NClob getNClob(int parameterIndex) throws SQLException {
+		return stmt.getNClob(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getNClob(java.lang.String)
+	 */
+	@Override
+	public NClob getNClob(String parameterName) throws SQLException {
+		return stmt.getNClob(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setSQLXML(java.lang.String, java.sql.SQLXML)
+	 */
+	@Override
+	public void setSQLXML(String parameterName, SQLXML xmlObject) throws SQLException {
+		stmt.setSQLXML(parameterName, xmlObject);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getSQLXML(int)
+	 */
+	@Override
+	public SQLXML getSQLXML(int parameterIndex) throws SQLException {
+		return stmt.getSQLXML(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getSQLXML(java.lang.String)
+	 */
+	@Override
+	public SQLXML getSQLXML(String parameterName) throws SQLException {
+		return stmt.getSQLXML(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getNString(int)
+	 */
+	@Override
+	public String getNString(int parameterIndex) throws SQLException {
+		return stmt.getNString(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getNString(java.lang.String)
+	 */
+	@Override
+	public String getNString(String parameterName) throws SQLException {
+		return stmt.getNString(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getNCharacterStream(int)
+	 */
+	@Override
+	public Reader getNCharacterStream(int parameterIndex) throws SQLException {
+		return stmt.getNCharacterStream(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getNCharacterStream(java.lang.String)
+	 */
+	@Override
+	public Reader getNCharacterStream(String parameterName) throws SQLException {
+		return stmt.getNCharacterStream(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getCharacterStream(int)
+	 */
+	@Override
+	public Reader getCharacterStream(int parameterIndex) throws SQLException {
+		return stmt.getCharacterStream(parameterIndex);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#getCharacterStream(java.lang.String)
+	 */
+	@Override
+	public Reader getCharacterStream(String parameterName) throws SQLException {
+		return stmt.getCharacterStream(parameterName);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setBlob(java.lang.String, java.sql.Blob)
+	 */
+	@Override
+	public void setBlob(String parameterName, Blob x) throws SQLException {
+		stmt.setBlob(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.BLOB, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setClob(java.lang.String, java.sql.Clob)
+	 */
+	@Override
+	public void setClob(String parameterName, Clob x) throws SQLException {
+		stmt.setClob(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.CLOB, x);
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setAsciiStream(java.lang.String, java.io.InputStream, long)
+	 */
+	@Override
+	public void setAsciiStream(String parameterName, InputStream x, long length) throws SQLException {
+		stmt.setAsciiStream(parameterName, x, length);
+		addParameter(getParameterIndex(parameterName), Types.JAVA_OBJECT, "(AsciiStream[" + length + "])");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setBinaryStream(java.lang.String, java.io.InputStream, long)
+	 */
+	@Override
+	public void setBinaryStream(String parameterName, InputStream x, long length) throws SQLException {
+		stmt.setBinaryStream(parameterName, x, length);
+		addParameter(getParameterIndex(parameterName), Types.JAVA_OBJECT, "(BinaryStream[" + length + "])");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setCharacterStream(java.lang.String, java.io.Reader, long)
+	 */
+	@Override
+	public void setCharacterStream(String parameterName, Reader reader, long length) throws SQLException {
+		stmt.setCharacterStream(parameterName, reader, length);
+		addParameter(getParameterIndex(parameterName), Types.JAVA_OBJECT, "(CharacterStream[" + length + "])");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setAsciiStream(java.lang.String, java.io.InputStream)
+	 */
+	@Override
+	public void setAsciiStream(String parameterName, InputStream x) throws SQLException {
+		stmt.setAsciiStream(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.JAVA_OBJECT, "(AsciiStream)");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setBinaryStream(java.lang.String, java.io.InputStream)
+	 */
+	@Override
+	public void setBinaryStream(String parameterName, InputStream x) throws SQLException {
+		stmt.setBinaryStream(parameterName, x);
+		addParameter(getParameterIndex(parameterName), Types.JAVA_OBJECT, "(BinaryStream)");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setCharacterStream(java.lang.String, java.io.Reader)
+	 */
+	@Override
+	public void setCharacterStream(String parameterName, Reader reader) throws SQLException {
+		stmt.setCharacterStream(parameterName, reader);
+		addParameter(getParameterIndex(parameterName), Types.JAVA_OBJECT, "(CharacterStream)");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setNCharacterStream(java.lang.String, java.io.Reader)
+	 */
+	@Override
+	public void setNCharacterStream(String parameterName, Reader value) throws SQLException {
+		stmt.setNCharacterStream(parameterName, value);
+		addParameter(getParameterIndex(parameterName), Types.JAVA_OBJECT, "(NCharacterStream)");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setClob(java.lang.String, java.io.Reader)
+	 */
+	@Override
+	public void setClob(String parameterName, Reader reader) throws SQLException {
+		stmt.setClob(parameterName, reader);
+		addParameter(getParameterIndex(parameterName), Types.CLOB, "(Clob)");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setBlob(java.lang.String, java.io.InputStream)
+	 */
+	@Override
+	public void setBlob(String parameterName, InputStream inputStream) throws SQLException {
+		stmt.setBlob(parameterName, inputStream);
+		addParameter(getParameterIndex(parameterName), Types.BLOB, "(Blob)");
+	}
+
+	/* (非 Javadoc)
+	 * @see java.sql.CallableStatement#setNClob(java.lang.String, java.io.Reader)
+	 */
+	@Override
+	public void setNClob(String parameterName, Reader reader) throws SQLException {
+		stmt.setNClob(parameterName, reader);
+		addParameter(getParameterIndex(parameterName), Types.NCLOB, "(NClob)");
+	}
+}

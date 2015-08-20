@@ -1,0 +1,353 @@
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>JDBC Query Log Settings</title>
+<link type="text/css" rel="stylesheet" href="css/jquery-ui.min.css"/>
+<link type="text/css" rel="stylesheet" href="css/jquery-ui.theme.min.css"/>
+<script type="text/javascript" src="js/jquery-1.11.2.min.js"></script>
+<script type="text/javascript" src="js/jquery-ui.min.js"></script>
+<script type="text/javascript" src="js/jquery.tmpl.min.js"></script>
+<script type="text/javascript" src="js/moment-with-locales.js"></script>
+<script type="text/javascript" src="js/paint_table.js"></script>
+
+<style type="text/css">
+body {
+	margin: 0;
+	padding: 0;
+	line-height:1.4;
+	font-family:Arial, sans-serif;
+	font-size:0.8em;
+}
+
+td.nowrap {
+	white-space : nowrap;
+	width : 5em;
+	padding : 0.3em 0.5em;
+}
+
+td.top {
+	vertical-align : top
+}
+
+td.num {
+	white-space : nowrap;
+	width : 3em;
+	padding : 0.3em 0.3em;
+	text-align: right;
+}
+
+pre {
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	overflow: auto;
+}
+
+input.full {
+	width: 100%;
+}
+
+code {
+	font-family:Arial, sans-serif;
+	font-size:0.9em;
+}
+
+.even {
+  background-color: #696969;
+  background-color2: #000033;
+}
+.odd {
+  background-color: #808080;
+  background-color2: #2f4f4f;
+}
+</style>
+
+<script id='historylist-tmpl' type='x-jquery-tmpl'>
+<div id="histories">
+<ul>
+{{each(url, histories) this.data}}
+	<li><a href='#${ url }'>${ url }</a></li>
+{{/each}}
+</ul>
+{{each(url, histories) this.data}}
+<div id='${ url }'>
+	<table id='historyTable' style='width:100%'>
+		<thead class='ui-widget-header'>
+			<tr>
+				<th>No.</th>
+				<th>start time</th>
+				<th>exec time</th>
+				<th>sql</th>
+				<th>request host</th>
+			</tr>
+		</thead>
+		<tbody class='ui-widget-content'>
+			{{each(index, history) histories}}
+			{{if history.error }}
+				<tr class='ui-state-error''>
+			{{else}}
+				<tr>
+			{{/if}}
+				<td class='top num'>${ index + 1 }</td>
+				<td class='top nowrap'>${ moment(history.time).format('YYYY/MM/DD HH:mm:ss.SSS') }</td>
+				<td class='top num'>${ history.elapsed } ms</td>
+				<td><pre><code>${ history.sql }</code></pre></td>
+				<td class='top nowrap'>${ history.host }</td>
+			</tr>
+			{{/each}}
+		</tbody>
+	</table>
+</div>
+{{/each}}
+</div>
+</script>
+
+<script id='runninglist-tmpl' type='x-jquery-tmpl'>
+<div id="runnings">
+<ul>
+{{each(url, runnings) this.data}}
+	<li><a href='#${ url }'>${ url }</a></li>
+{{/each}}
+</ul>
+{{each(url, runnings) this.data}}
+<div id='${ url }'>
+	<table id='runningTable' style='width:100%'>
+		<thead class='ui-widget-header'>
+			<tr>
+				<th>No.</th>
+				<th>start time</th>
+				<th>elapsed</th>
+				<th>sql</th>
+				<th>request host</th>
+			</tr>
+		</thead>
+		<tbody class='ui-widget-content'>
+			{{each(index, running) runnings}}
+			<tr>
+				<td class='top num'>${ index + 1 }</td>
+				<td class='top nowrap'>${ moment(running.time).format('YYYY/MM/DD HH:mm:ss.SSS') }</td>
+				<td class='top num'>${ running.elapsed } ms</td>
+				<td><pre><code>${ running.sql }</code></pre></td>
+				<td class='top nowrap'>${ running.host }</td>
+			</tr>
+			{{/each}}
+		</tbody>
+	</table>
+</div>
+{{/each}}
+</div>
+</script>
+
+<script id='setting-tmpl' type='x-jquery-tmpl'>
+{{each(host, settings) this.data}}
+	{{each(url, setting) settings}}
+		<tr><td colspan='2' class='nowrap'>${ url }</td></tr>
+		{{each(item, value) setting}}
+			<tr><td class='nowrap'>${ item }</td><td><input type='text' id='${ url }' class='full' value='${ value }'/></td></tr>
+		{{/each}}
+		<tr><td></td><td><button id='${url}'>save</button></td></tr>
+	{{/each}}
+	</tr>
+{{/each}}
+</script>
+
+<script>
+var servers = '';
+var keepSettings = {};
+
+$(function() {
+	$("#tabs").tabs();
+	$('button').button();
+
+	// load servers
+	servers = localStorage.getItem("servers").trim();
+	$('#servers').val(servers);
+
+	// init
+	loadHistory();
+	loadRunning();
+	loadSettings();
+
+	$('#reloadHistory').click(loadHistory);
+	$('#reloadRunning').click(loadRunning);
+	$('#saveServers').click(saveServers);
+	$('#loadSettings').click(loadSettings);
+});
+
+function loadHistory() {
+	var param = {}
+	if (servers != '') {
+		param['servers'] = servers;
+	}
+	$.ajax({
+		url: '../history',
+		data: param,
+		cache: false
+	}).done(function(history) {
+		// merge to connect url
+		var perUrl = {};
+		$.each(history, function(host, values) {
+			$.each(values, function(url, histories) {
+				if (!perUrl[url]) {
+					perUrl[url] = [];
+				}
+				histories.map(function(data) { data['host'] = host; });
+				perUrl[url] = perUrl[url].concat(histories).sort(timeSort);
+			});
+		});
+
+		$('#histories').remove();
+		$('#historylist-tmpl').tmpl(perUrl).appendTo('#historyTabs');
+		$("#histories").tabs();
+		$('#historyUpdate').text('Last Update: ' + moment().format('YYYY/MM/DD HH:mm:ss'));
+		$('#histories').find("tr:nth-child(odd)").addClass("odd");
+		$('#histories').find("tr:nth-child(even)").addClass("even");
+	});
+}
+
+function loadRunning() {
+	var param = {}
+	if (servers != '') {
+		param['servers'] = servers;
+	}
+	$.ajax({
+		url: '../running',
+		data: param,
+		cache: false
+	}).done(function(running) {
+		// merge to connect url
+		var perUrl = {};
+		$.each(running, function(host, values) {
+			$.each(values, function(url, queries) {
+				if (!perUrl[url]) {
+					perUrl[url] = [];
+				}
+				queries.map(function(data) { data['host'] = host; });
+				perUrl[url] = perUrl[url].concat(queries).sort(timeSort);
+			});
+		});
+
+		$('#runnings').remove();
+		$('#runninglist-tmpl').tmpl(perUrl).appendTo('#runningTabs');
+		$("#runnings").tabs();
+		$('#runningUpdate').text('Last Update: ' + moment().format('YYYY/MM/DD HH:mm:ss'));
+		$('#runnings').find("tr:nth-child(odd)").addClass("odd");
+		$('#runnings').find("tr:nth-child(even)").addClass("even");
+	});
+}
+
+function loadSettings() {
+	// get from single server
+	$.ajax({
+		url: '../setting',
+		cache: false
+	}).done(function(data) {
+		$('#setting-list').empty();
+		$('#settingUpdate').text('Last Update: ' + moment().format('YYYY/MM/DD HH:mm:ss'));
+		$('#setting-tmpl').tmpl(data).appendTo('#setting-list');
+
+		$('#settings').find("tr:nth-child(odd)").addClass("odd");
+		$('#settings').find("tr:nth-child(even)").addClass("even");
+
+		$.each(data, function(host, settings) {
+			$.each(settings, function(url, setting) {
+				//console.log(setting);
+				keepSettings[url] = setting;
+				$(':button[id=' + selectorEscape(url) + ']').click(saveSettings);
+			});
+			return false;
+		});
+	});
+}
+
+function saveServers() {
+	// save to localStorage
+	servers = $('#servers').val().trim();
+	localStorage.setItem("servers", servers);
+	console.log('servers saved.');
+}
+
+function saveSettings() {
+	var url = $(this).attr('id');
+	var setting = keepSettings[url];
+
+	var items = $('#settings').find(':text[id=' + selectorEscape(url)+']');
+	setting['timeThreshold'] = $(items[0]).val();
+	setting['acceptFilter'] = $(items[1]).val().trim();
+	setting['ignoreFilter'] = $(items[2]).val().trim();
+	setting['historyCount'] = $(items[3]).val().trim();
+	setting['format'] = $(items[4]).val().trim();
+	var sendSetting = {};
+	sendSetting[url] = setting;
+
+	var sendUrl = '../setting'
+	if (servers != '') {
+		sendUrl += '?servers=' + servers;
+	}
+
+	$.ajax({
+		url: sendUrl,
+		data: JSON.stringify(sendSetting),
+		type : "PUT",
+		cache : false,
+		dataType : "json",
+		success : function(data) {
+			console.log("send settings.");
+		}
+	});
+}
+
+/**
+ * データ中のtime項目で降順ソートするためのfunction
+ */
+function timeSort(a, b) {
+	return b.time - a.time;
+}
+
+/**
+ * JQueryのセレクタに利用できない文字をエスケープする
+ */
+function selectorEscape(val){
+	return val.replace(/[ !"#$%&'()*+,.\/:;<=>?@\[\\\]^`{|}~]/g, '\\$&');
+}
+</script>
+</head>
+<body>
+<div id="tabs">
+	<ul>
+		<li><a href="#tabs-1">Query History</a></li>
+		<li><a href="#tabs-2">Running Quereis</a></li>
+		<li><a href="#tabs-3">Settings</a></li>
+	</ul>
+
+	<div id="tabs-1">
+		<button id="reloadHistory">Reload</button>
+		<span id='historyUpdate' class='ui-widget-header' style='float:right;'></span>
+		<div id="historyTabs"></div>
+	</div>
+
+	<div id="tabs-2">
+		<button id="reloadRunning">Reload</button>
+		<span id='runningUpdate' class='ui-widget-header' style='float:right;'></span>
+		<div id="runningTabs"></div>
+	</div>
+
+	<div id="tabs-3">
+		Servers : <input type="text" id='servers' size='60'>&nbsp;
+		<button id="saveServers">Save Servers</button>
+		<hr>
+		<button id="loadSettings">Load Setting</button>
+  		<span id='settingUpdate' style='float:right;'></span>
+		<table id='settings' style='width:100%'>
+			<thead class='ui-widget-header'>
+				<tr>
+					<th>item</th>
+					<th>value</th>
+				</tr>
+			</thead>
+			<tbody id='setting-list' class='ui-widget-content'>
+			</tbody>
+		</table>
+	</div>
+</div>
+</body>
+</html>
