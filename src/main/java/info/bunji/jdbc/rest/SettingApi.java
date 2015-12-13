@@ -15,22 +15,19 @@
  */
 package info.bunji.jdbc.rest;
 
-import info.bunji.jdbc.logger.JdbcLogger;
-import info.bunji.jdbc.logger.JdbcLoggerFactory;
-
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import info.bunji.jdbc.logger.JdbcLogger;
+import info.bunji.jdbc.logger.JdbcLoggerFactory;
 import net.arnx.jsonic.JSON;
 
 /**
@@ -50,8 +47,15 @@ public class SettingApi extends AbstractApi {
 			bos = new BufferedOutputStream(res.getOutputStream());
 			res.setContentType("application/json; charset=UTF-8");
 
+			long lastUpdate = 0L;
+			Map<String, Map<String, Object>> settings = getSettingData(req.getServerPort());
+			for(Entry<String, Map<String, Object>> entry : settings.entrySet()) {
+				lastUpdate = Math.max((Long)entry.getValue().remove("lastUpdate"), lastUpdate);
+			}
+			res.setDateHeader("Last-modified", lastUpdate);
+
 			// 整形して出力
-			JSON.encode(getSettingData(req.getServerPort()), bos, true);
+			JSON.encode(settings, bos, true);
 
 			res.setStatus(HttpServletResponse.SC_OK);
 			bos.flush();
@@ -67,7 +71,7 @@ public class SettingApi extends AbstractApi {
 		@SuppressWarnings("unchecked")
 		Map<String,Map<String,Object>> setting = JSON.decode(req.getInputStream(), Map.class);
 
-		// 接続URL単位の処理
+			// 接続URL単位の処理
 		for(Entry<String,Map<String,Object>> entry : setting.entrySet()) {
 			String url = entry.getKey().toString();
 			if (JdbcLoggerFactory.hasLogger(url)) {
@@ -84,18 +88,37 @@ public class SettingApi extends AbstractApi {
 		res.setStatus(HttpServletResponse.SC_OK);
 	}
 
-	private Map<String, Object> getSettingData(int port) throws IOException {
-		List<JdbcLogger> loggers = JdbcLoggerFactory.getLoggers();
-
-		String host = hostName + ":" + port;
-
-		Map<String,Object> settings = new TreeMap<String,Object>();
-		for (JdbcLogger logger : loggers) {
-			settings.put(logger.getConnectUrl() , logger.getSetting());
+	private Map<String, Map<String,Object>> getSettingData(int port) throws IOException {
+		Map<String, Map<String, Object>> jsonMap = new HashMap<String, Map<String, Object>>();
+		for (JdbcLogger logger : JdbcLoggerFactory.getLoggers()) {
+			jsonMap.put(logger.getConnectUrl() , logger.getSetting());
 		}
-		Map<String, Object> jsonMap = new HashMap<String, Object>();
-		jsonMap.put(host, settings);
-
 		return jsonMap;
 	}
+
+	/**
+	 *
+	 */
+/*
+	@Override
+	protected Map<String, Collection<Object>> postMergeProcess(Map<String, Collection<Object>> result) {
+		// 更新日時が最新のデータを返却します
+		for (Entry<String, Collection<Object>> entry : result.entrySet()) {
+
+			Object[] tmp = entry.getValue().toArray();
+			Arrays.sort(tmp, new Comparator<Object>() {
+				@Override
+				public int compare(Object o1, Object o2) {
+					return (long)((Map)o1).get("lastUpdate"). - (long)((Map)o2).get("lastUpdate");
+				}
+			});
+
+
+//			Object[] qiList = JSON.decode(JSON.encode(entry.getValue()), QueryInfo[].class);
+//			Arrays.sort(qiList);
+//			entry.setValue(Arrays.asList(qiList));
+		}
+		return result;
+	}
+*/
 }

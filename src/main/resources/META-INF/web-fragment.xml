@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-fragment>
+	<servlet>
+		<servlet-name>jdbcservlet</servlet-name>
+		<servlet-class>info.bunji.jdbc.rest.RestApiServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>jdbcservlet</servlet-name>
+		<url-pattern>/jdbc/*</url-pattern>
+	</servlet-mapping>
+</web-fragment>

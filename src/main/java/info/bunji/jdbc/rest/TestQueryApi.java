@@ -92,10 +92,10 @@ public class TestQueryApi extends AbstractApi {
 		Statement stmt = null;
 		try {
 			String[] sql = new String[] {
-				"SELECT count(*) as COUNT FROM JdbcTest",
+				//"SELECT count(*) as COUNT FROM JdbcTest",
 				"SeleCt 1",
 				"Select aaa as item1,\nbbb as item2, ccc as item3 from dual",
-				"SELECT 1 as ABC",
+				//"ERROR 1 as ABC",
 				"SELECT 1 as ABC, 2 as DEF",
 			};
 
@@ -110,8 +110,9 @@ public class TestQueryApi extends AbstractApi {
 
 			res.setStatus(HttpServletResponse.SC_OK);
 		} catch(Exception e) {
-			logger.error(e.getMessage(), e);
-			res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			logger.error(e.getMessage());
+//			res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			res.setStatus(HttpServletResponse.SC_OK);
 		} finally {
 			try {
 				if (stmt != null) stmt.close();

@@ -19,9 +19,11 @@
 package info.bunji.jdbc.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 //import org.apache.openjpa.lib.util.J2DoPrivHelper;
 
@@ -52,6 +54,24 @@ public class SQLFormatter {
 	private int lineLength = 9999;
 	private String wrapIndent = "    ";
 	private String clauseIndent = "  ";
+
+	private static List<String> SQL_KEYWORDS = Arrays.asList(
+			"SELECT",
+			"FROM",
+			"WHERE",
+			"AND",
+			"OR",
+			"IN",
+			"NOT NULL",
+			"HAVING",
+			"ORDER BY",
+			"GROUP BY",
+			"VALUES",
+			"UNION",
+			"ALTER",
+			"SET",
+			"MINUS"
+			);
 
 	private static final String[] selectSeparators = new String[] {
 		"FROM ", "WHERE ", "ORDER BY ", // ### is this order correct?
@@ -158,6 +178,54 @@ public class SQLFormatter {
 
 			return buf.toString();
 		}
+	}
+
+	private static final Pattern regex1 = Pattern.compile("\\/\\*.*?\\*\\/", Pattern.DOTALL);
+	private static final Pattern regex2 = Pattern.compile("--.*$", Pattern.MULTILINE);
+//	private static final Pattern regex3 = Pattern.compile("^\\n", Pattern.MULTILINE);
+	private static final Pattern regex3 = Pattern.compile("\\r|\\n", Pattern.MULTILINE);
+
+	// sql を構文単位に分割
+	// "'"による文字列を考慮する必要がある
+	public String format(String sqlStr) {
+		String sql = sqlStr.trim();
+
+		// 複数行コメントの除去
+		sql = regex1.matcher(sql).replaceAll("").trim();
+		// 単一行コメントの除去
+		sql = regex2.matcher(sql).replaceAll("").trim();
+		// 空行の削除
+		sql = regex3.matcher(sql).replaceAll("").trim();
+
+System.out.println(SQL_KEYWORDS);
+
+		int start = 0;
+		int end = -1;
+		StringBuilder formatSql = new StringBuilder(sql.length());
+		String upperSql = sql.toUpperCase();
+System.out.println(upperSql);
+try {
+		while(true) {
+			for (String keyword : SQL_KEYWORDS) {
+				end = upperSql.indexOf(keyword + " ", start);
+System.out.println("check " + keyword + " " + start + "/" + end);
+				if (end != -1) {
+System.out.println("keyword="  + keyword + " [" + 	sql.substring(start, keyword.length() + 1) + "]" + start + "/" + end);
+					formatSql.append(sql.substring(start, keyword.length() + 1));
+System.out.println("[" + formatSql + "]");
+					start = end + keyword.length() + 1;
+//					break;
+				}
+			}
+			if (end == -1) {
+				break;
+			}
+		}
+} catch(Exception e) {
+	System.out.println(start + " - " + end);
+	e.printStackTrace();
+}
+ 		return formatSql.toString();
 	}
 
 	private Object prettyPrintLine(Object sqlObject) {

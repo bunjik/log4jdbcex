@@ -15,14 +15,12 @@
  */
 package info.bunji.jdbc.rest;
 
-import info.bunji.jdbc.logger.JdbcLogger;
-import info.bunji.jdbc.logger.JdbcLoggerFactory;
-import info.bunji.jdbc.logger.impl.QueryInfo;
-
 import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.util.List;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import javax.servlet.ServletContext;
@@ -30,6 +28,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import info.bunji.jdbc.logger.JdbcLogger;
+import info.bunji.jdbc.logger.JdbcLoggerFactory;
+import info.bunji.jdbc.logger.impl.QueryInfo;
 import net.arnx.jsonic.JSON;
 
 /**
@@ -51,19 +52,36 @@ public class RunningQueriesApi extends AbstractApi {
 
 			String host = hostName + ":" + req.getServerPort();
 
-			Map<String, List<QueryInfo>> tmpMap = new TreeMap<String, List<QueryInfo>>();
+			Map<String, Collection<QueryInfo>> tmpMap = new TreeMap<String, Collection<QueryInfo>>();
 			for (JdbcLogger log : JdbcLoggerFactory.getLoggers()) {
-				tmpMap.put(log.getConnectUrl(), log.getRunningQueries());
+				Collection<QueryInfo> qiList = log.getRunningQueries();
+				for (QueryInfo qi : qiList) {
+					qi.setHost(host);
+				}
+				tmpMap.put(log.getConnectUrl(), qiList);
 			}
-			Map<String, Object> jsonMap = new TreeMap<String, Object>();
-			jsonMap.put(host, tmpMap);
-			JSON.encode(jsonMap, bos, true);	// 整形して出力
+			JSON.encode(tmpMap, bos, false);
 
+			res.setDateHeader("Last-modified", System.currentTimeMillis());
 			res.setStatus(HttpServletResponse.SC_OK);
 			bos.flush();
 		} catch(Exception e) {
 			logger.error(e.getMessage(), e);
 			res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 		}
+	}
+
+	/**
+	 *
+	 */
+	@Override
+	protected Map<String, Object> postMergeProcess(Map<String, Object> result) {
+		// マージされたデータをソートし直す
+		for (Entry<String, Object> entry : result.entrySet()) {
+			Object[] qiList = JSON.decode(JSON.encode(entry.getValue()), QueryInfo[].class);
+			Arrays.sort(qiList);
+			entry.setValue(Arrays.asList(qiList));
+		}
+		return result;
 	}
 }
