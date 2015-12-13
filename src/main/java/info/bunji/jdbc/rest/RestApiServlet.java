@@ -49,7 +49,7 @@ public class RestApiServlet extends HttpServlet {
 		apiMap.put("running", new RunningQueriesApi(context));
 
 		// for Test
-		apiMap.put("test", new TestQueryApi(context));
+		//apiMap.put("test", new TestQueryApi(context));
 
 		// 明示的にinit() を呼び出す
 		for (AbstractApi api : apiMap.values()) {
@@ -112,6 +112,7 @@ public class RestApiServlet extends HttpServlet {
 		// [1] api名
 		// [2] api名以降のURI
 		String[] params = pathInfo.split("/", 3);
+
 		if (params.length > 1) {
 			req.setAttribute("API", params[1]); // API名
 			req.setAttribute("API_PATH", params.length > 2 ? params[2] : null);

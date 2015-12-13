@@ -15,12 +15,12 @@
  */
 package info.bunji.jdbc.logger;
 
-import java.util.Collection;
-import java.util.Map;
-
 import info.bunji.jdbc.LoggerHelper;
 import info.bunji.jdbc.logger.impl.QueryInfo;
 import info.bunji.jdbc.specifics.RdbmsSpecifics;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -92,10 +92,10 @@ public interface JdbcLogger {
 	/**
 	 * 現在実行中のクエリのリストを取得する
 	 */
-	public Collection<QueryInfo> getRunningQueries();
+	public List<QueryInfo> getRunningQueries();
 
 	/**
 	 * 実行済のクエリのリストを取得する
 	 */
-	public Collection<QueryInfo> getHistory();
+	public List<QueryInfo> getHistory();
 }

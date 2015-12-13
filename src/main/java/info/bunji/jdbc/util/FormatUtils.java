@@ -26,9 +26,7 @@ public class FormatUtils {
 
 	public static String formatSql(final String sql) {
 		try {
-//			return formatter.prettyPrint(sql).toString();
-//			return formatter.format(sql);
-return sql;
+			return formatter.prettyPrint(sql).toString();
 		} catch (Exception e) {
 			// not formated.
 			return sql;

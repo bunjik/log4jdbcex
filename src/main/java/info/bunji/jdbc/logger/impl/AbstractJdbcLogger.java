@@ -15,24 +15,22 @@
  */
 package info.bunji.jdbc.logger.impl;
 
-import java.sql.BatchUpdateException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeSet;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-
 import info.bunji.jdbc.LoggerHelper;
 import info.bunji.jdbc.logger.JdbcLogger;
 import info.bunji.jdbc.specifics.OracleRdbmsSpecifics;
 import info.bunji.jdbc.specifics.RdbmsSpecifics;
 import info.bunji.jdbc.util.FormatUtils;
+
+import java.sql.BatchUpdateException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public abstract class AbstractJdbcLogger implements JdbcLogger {
 
@@ -53,10 +51,10 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	/** ログ出力時の最大文字数(デフォルト:無制限[-1]) */
 	protected int limitLength = -1;
 
-	protected long lastUpdate = 0;
-
 	/** このLoggerインスタンスが出力対象とする接続URL */
 	protected String connectUrl;
+
+	protected String dsName = null;
 
 	/** 実行履歴の保持件数(接続URL単位) */
 	protected int historyCount = 50;
@@ -77,8 +75,6 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 		@Override
 		public boolean add(QueryInfo info) {
 			if (historyCount <= 0) return true;
-
-			info.setDataSource(connectUrl);
 
 			// 保持件数を超えるものは古いものから削除
 			while(size() >= historyCount) remove(0);
@@ -288,7 +284,7 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 					long now = System.currentTimeMillis();
 					long elapsed = now - helper.getStartTime();
 					warn(String.format(EXCEPTION_MSG_FORMAT, elapsed, sql));
-					queryHistory.add(new QueryInfo(helper.getStartTime(), elapsed, sql, t));
+					queryHistory.add(new QueryInfo(helper.getStartTime(), elapsed, sql, true));
 				}
 			}
 		} catch (Throwable e) {
@@ -312,7 +308,6 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 		statusMap.put("historyCount", historyCount);
 		statusMap.put("format",       isFormat);
 		statusMap.put("limitLength",  limitLength);
-		statusMap.put("lastUpdate",   lastUpdate);
 
 		return statusMap;
 	}
@@ -365,10 +360,7 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 								key, value, e.getMessage()));
 				return false;
 			}
-		}
-		// 最終更新日時を設定
-		lastUpdate = System.currentTimeMillis();
-
+		};
 		return true;
 	}
 
@@ -378,16 +370,14 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	 ********************************************
 	 */
 	@Override
-	public Collection<QueryInfo> getRunningQueries() {
+	public List<QueryInfo> getRunningQueries() {
 		List<QueryInfo> activeQueries = new ArrayList<QueryInfo>();
 		synchronized (activeStatements) {
 			for (LoggerHelper helper : activeStatements) {
-				QueryInfo qi = new QueryInfo(helper.getStartTime(),
+				activeQueries.add(new QueryInfo(helper.getStartTime(),
 								System.currentTimeMillis() - helper.getStartTime(),
 								isFormat ? FormatUtils.formatSql(helper.dumpSql()) : helper.dumpSql(),
-								helper.getQueryId());
-				qi.setDataSource(connectUrl);
-				activeQueries.add(qi);
+								helper.getQueryId()));
 			}
 		}
 		return activeQueries;
@@ -399,20 +389,17 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	 ********************************************
 	 */
 	@Override
-	public Collection<QueryInfo> getHistory() {
-		Collection<QueryInfo> tmpList = new TreeSet<QueryInfo>(queryHistory);
+	public List<QueryInfo> getHistory() {
+		List<QueryInfo> tmpList = new ArrayList<QueryInfo>(queryHistory);
 		if (isFormat) {
-
-/*
 			for (int i = 0; i < tmpList.size(); i++) {
 				QueryInfo q = tmpList.get(i);
 				tmpList.set(i, new QueryInfo(
 									q.getTime(),
 									q.getElapsed(),
 									FormatUtils.formatSql(q.getSql()),
-									q.getThrowable()));
+									q.isError()));
 			}
-*/
 		}
 		return tmpList;
 	}

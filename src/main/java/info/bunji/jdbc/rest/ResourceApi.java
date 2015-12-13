@@ -44,7 +44,7 @@ public class ResourceApi extends AbstractApi {
 	 */
 	public ResourceApi(ServletContext context) {
 		super(context);
-		resourceBase = getClass().getPackage().getName().replace(".", "/") + "/";
+		resourceBase = getClass().getPackage().getName().replace(".", "/");
 		//resourceBase = "/ui/";
 		logger.trace(resourceBase);
 	}
@@ -66,7 +66,8 @@ public class ResourceApi extends AbstractApi {
 			String path = getApiPath(req);
 
 			// ファイル名が指定されていない場合、"index.html"を補完
-			if (path == null || path.isEmpty() || path.endsWith("/")) path += "index.html";
+			if (path.isEmpty() || path.endsWith("/")) path += "index.html";
+
 			is = getResourceStream(path);
 			if (is == null) {
 				res.setStatus(HttpServletResponse.SC_NOT_FOUND);

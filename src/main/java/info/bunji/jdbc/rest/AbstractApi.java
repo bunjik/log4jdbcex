@@ -15,6 +15,9 @@
  */
 package info.bunji.jdbc.rest;
 
+import info.bunji.jdbc.logger.JdbcLogger;
+import info.bunji.jdbc.logger.JdbcLoggerFactory;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -25,11 +28,10 @@ import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -38,8 +40,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import info.bunji.jdbc.logger.JdbcLogger;
-import info.bunji.jdbc.logger.JdbcLoggerFactory;
 import net.arnx.jsonic.JSON;
 
 public abstract class AbstractApi extends HttpServlet {
@@ -138,19 +138,6 @@ public abstract class AbstractApi extends HttpServlet {
 		return (String)req.getAttribute("API_PATH");
 	}
 
-	/**
-	 * 複数サーバのデータマージ後に呼び出される
-	 *
-	 * マージ後のデータに加工が必要な場合に実装します。
-	 * デフォルトは何も行いません。
-	 *
-	 * @param result
-	 * @return
-	 */
-	protected Map<String, Object> postMergeProcess(Map<String, Object> result) {
-		return result;
-	}
-
 	@Override
 	protected void service(HttpServletRequest req, HttpServletResponse res)
 										throws ServletException, IOException {
@@ -161,8 +148,7 @@ public abstract class AbstractApi extends HttpServlet {
 		if (servers != null && !servers.trim().isEmpty()) {
 			OutputStream os = res.getOutputStream();
 			res.setContentType("application/json; charset=UTF-8");
-			res.setDateHeader("Last-modified", System.currentTimeMillis());
-			JSON.encode(postMergeProcess(broadcastRequest(req)), os);
+			JSON.encode(broadcastRequest(req), os);
 			os.flush();
 		} else {
 			super.service(req, res);
@@ -171,67 +157,14 @@ public abstract class AbstractApi extends HttpServlet {
 
 	/**
 	 *
-	 * @param req
-	 * @return
+	 * @param closeable
 	 */
-	private Map<String, Object> broadcastRequest(HttpServletRequest req) {
-		Map<String, Object> resultMap = new TreeMap<String, Object>();
-		String serversParam = req.getParameter("servers");
-		String[] servers = serversParam.split(",");
-
-		String scheme = req.getScheme() + "://";
-		String uri = req.getRequestURI();
-		String method = req.getMethod();
-
-		// リクエストURL一覧を生成(サーバの重複を除外)
-//		Set<String> sendList = new TreeSet<String>();
-List<String> sendList = new ArrayList<String>();
-		for (String server : servers) {
-			String requestUrl = scheme + server.trim() + uri;
-			sendList.add(requestUrl);
-		}
-
-		// body部にデータがあれば各サーバに転送
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		BufferedInputStream bis = null;
-		try {
-			bis = new BufferedInputStream(req.getInputStream());
-			byte[] buf = new byte[4096];
-			int len;
-			while ((len = bis.read(buf)) > 0) {
-				baos.write(buf, 0, len);
-			}
-		} catch (IOException ioe) {
-			logger.warn(ioe.getMessage(), ioe);
-		} finally {
-			closeQuietly(bis);
-		}
-
-		// Cookieの取得
-		Cookie[] cookies = req.getCookies();
-
-		for (String s : sendList) {
+	protected void closeQuietly(Closeable closeable) {
+		if (closeable != null) {
 			try {
-				logger.trace("(" + method + ") " + s);
-				Map<String, Object> o = sendRequest(method, s, baos, cookies);
-
-				// mapのマージ
-				for (String key : o.keySet()) {
-					if (!resultMap.containsKey(key)) {
-						resultMap.put(key, o.get(key));
-					} else {
-						if (o instanceof Collection) {
-							((Collection)resultMap.get(key)).addAll((Collection)o.get(key));
-						} else {
-							((Map)resultMap.get(key)).putAll((Map)o.get(key));
-						}
-					}
-				}
-			} catch (Exception e) {
-				logger.warn(e.toString(), e);
-			}
+				closeable.close();
+			} catch (Exception e) {}
 		}
-		return resultMap;
 	}
 
 	/**
@@ -244,7 +177,7 @@ List<String> sendList = new ArrayList<String>();
 	 * @param requestUrl
 	 * @return
 	 */
-	private Map<String, Object> sendRequest(String method, String requestUrl,
+	private Map<String,Object> sendRequest(String method, String requestUrl,
 						ByteArrayOutputStream baos, Cookie[] cookies) throws Exception {
 
 		HttpURLConnection conn = null;
@@ -295,13 +228,54 @@ List<String> sendList = new ArrayList<String>();
 
 	/**
 	 *
-	 * @param closeable
+	 * @param req
+	 * @return
 	 */
-	protected void closeQuietly(Closeable closeable) {
-		if (closeable != null) {
-			try {
-				closeable.close();
-			} catch (Exception e) {}
+	protected Map<String, Object> broadcastRequest(HttpServletRequest req) {
+		Map<String, Object> resultMap = new TreeMap<String,Object>();
+		String serversParam = req.getParameter("servers");
+		String[] servers = serversParam.split(",");
+
+		String scheme = req.getScheme() + "://";
+		String uri = req.getRequestURI();
+		String method = req.getMethod();
+
+		// リクエストURL一覧を生成(サーバの重複を除外)
+		Set<String> sendList = new TreeSet<String>();
+		for (String server : servers) {
+			String requestUrl = scheme + server.trim() + uri;
+			sendList.add(requestUrl);
 		}
+
+		// body部にデータがあれば各サーバに転送
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		BufferedInputStream bis = null;
+		try {
+			bis = new BufferedInputStream(req.getInputStream());
+			byte[] buf = new byte[4096];
+			int len;
+			while ((len = bis.read(buf)) > 0) {
+				baos.write(buf, 0, len);
+			}
+		} catch (IOException ioe) {
+			logger.warn(ioe.getMessage(), ioe);
+		} finally {
+			closeQuietly(bis);
+		}
+
+		// Cookieの取得
+		Cookie[] cookies = req.getCookies();
+
+		for (String s : sendList) {
+			try {
+				logger.trace("(" + method + ") " + s);
+				Map<String,Object> o = sendRequest(method, s, baos, cookies);
+				resultMap.putAll(o);
+			} catch (Exception e) {
+				logger.warn(e.toString(), e);
+			}
+		}
+
+		return resultMap;
 	}
 }
