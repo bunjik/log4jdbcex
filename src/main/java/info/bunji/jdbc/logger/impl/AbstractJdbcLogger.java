@@ -312,7 +312,7 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 		statusMap.put("historyCount", historyCount);
 		statusMap.put("format",       isFormat);
 		statusMap.put("limitLength",  limitLength);
-		statusMap.put("lastUpdate",   lastUpdate);
+		//statusMap.put("lastUpdate",   lastUpdate);
 
 		return statusMap;
 	}
@@ -400,19 +400,17 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	 */
 	@Override
 	public Collection<QueryInfo> getHistory() {
-		Collection<QueryInfo> tmpList = new TreeSet<QueryInfo>(queryHistory);
+		Collection<QueryInfo> tmpList = new TreeSet<QueryInfo>();
 		if (isFormat) {
-
-/*
-			for (int i = 0; i < tmpList.size(); i++) {
-				QueryInfo q = tmpList.get(i);
-				tmpList.set(i, new QueryInfo(
-									q.getTime(),
-									q.getElapsed(),
-									FormatUtils.formatSql(q.getSql()),
-									q.getThrowable()));
+			synchronized (queryHistory) {
+				for (QueryInfo qi : queryHistory) {
+					QueryInfo tmpQi = qi.clone();
+					tmpQi.setSql(FormatUtils.formatSql(qi.getSql()));
+					tmpList.add(tmpQi);
+				}
 			}
-*/
+		} else {
+			tmpList.addAll(queryHistory);
 		}
 		return tmpList;
 	}

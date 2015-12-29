@@ -1,5 +1,10 @@
 @CHARSET "UTF-8";
 
+.word-wrap {
+	white-space:pre-wrap;
+	word-wrap:break-word;
+}
+
 .glyphicon-refresh-animate {
 	-animation: spin .5s infinite linear;
 	-ms-animation: spin .5s infinite linear;

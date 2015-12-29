@@ -15,10 +15,10 @@
  */
 package info.bunji.jdbc.logger.impl;
 
-import info.bunji.jdbc.logger.JdbcLogger;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import info.bunji.jdbc.logger.JdbcLogger;
 
 /**
  * SLF4JのログAPIを利用する実装クラス
@@ -47,7 +47,7 @@ public class Slf4jJdbcLogger extends AbstractJdbcLogger implements JdbcLogger {
 	@Override
 	public void debug(String msg, Object... args) {
 		if (debugLogger.isDebugEnabled())
-		debugLogger.debug(String.format(msg, args));
+		debugLogger.debug(msg != null ? String.format(msg, args) : null);
 	}
 
 	@Override

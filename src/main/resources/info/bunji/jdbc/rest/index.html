@@ -10,245 +10,9 @@
 <script type="text/javascript" src="js/angular.min.js"></script>
 <script type="text/javascript" src="js/hotkeys.min.js"></script>
 <script type="text/javascript" src="js/ui-bootstrap-tpls-0.14.3.min.js"></script>
+
+<script type="text/javascript" src="js/app.js"></script>
 <script>
-var app = angular.module("logger-ui", ["ui.bootstrap", "cfp.hotkeys"]);
-
-app.config(function(hotkeysProvider) {
-    hotkeysProvider.includeCheatSheet = true;
-});
-
-app.controller("appCtrl", function($scope, $http, $q, $interval, hotkeys) {
-
-	$scope.activeTab = { history: true, running: false, setting: false };
-	$scope.historyDsTab = {};
-	$scope.runningDsTab = {};
-	$scope.allQueriesTab = "[ALL]";
-
-	$scope.historyMap = {};
-	$scope.runningMap = {};
-	$scope.settings = {};
-	$scope.servers = "";
-	$scope.isLoading = false;
-
-	$scope.historyLastUpdate;
-	$scope.runningLastUpdate;
-	$scope.historyAutoLoading = false;
-	$scope.runningAutoLoading = false;
-	$scope.historyTimerPromise = null;
-	$scope.runningTimerPromise = null;
-
-	// デフォルトのホットキー設定
-	hotkeys.add({
-		combo: 'h',
-		description: 'Select Query History Tab.',
-		callback: function() { $scope.selectTab("history"); }
-	});
-	hotkeys.add({
-		combo: 'q',
-		description: 'Select Running Queries Tab.',
-		callback: function() { $scope.selectTab("running"); }
-	});
-	hotkeys.add({
-		combo: 's',
-		description: 'Select Settings Tab.',
-		callback: function() { $scope.selectTab("setting"); }
-	});
-	hotkeys.add({
-		combo: 'r',
-		description: 'Reload.',
-		callback: function() {
-			if ($scope.activeTab.history) $scope.loadHistory();
-			if ($scope.activeTab.running) $scope.loadRunning();
-		}
-	});
-	hotkeys.add({
-		combo: 't',
-		description: 'toggle Auto Reload.',
-		callback: function() { $scope.toggleAutoReload(); }
-	});
-
-	/**
-	 **********************************
-	 * 初期化処理
-	 **********************************
-	 */
-	$scope.init = function() {
-		// for Test
-		var promiseList = [];
-		for (var i = 0; i < 2; i++) {
-			promiseList.push($http.get("../test"));
-		}
-
-		// load servers
-		$scope.servers = localStorage.getItem("servers");
-
-		// 全部終わったらロード
-		Promise.all(promiseList).then(function() {
-			$scope.loadHistory().then(function() {
-				// datasource毎のhotkey設定
-				var idx = 1;
-				angular.forEach($scope.historyMap, function(elem, name) {
-					$scope.historyDsTab[name] = (idx == 1);
-					hotkeys.add({
-						combo: "" + idx,
-						description: "Select " + name + " Tab.",
-						callback: function() { $scope.selectDsTab(name); }
-					});
-					idx++;
-				});
-			});
-			$scope.loadRunning().then(function() {
-				// hotkeyの設定
-				var idx = 1;
-				angular.forEach($scope.runningMap, function(elem, name) {
-					$scope.runningDsTab[name] = (idx == 1);
-					hotkeys.add({
-						combo: "" + idx,
-						description: "Select " + name + " Tab.",
-						callback: function() { $scope.selectDsTab(name); }
-					});
-					idx++;
-				});
-			});
-			$scope.loadSetting();
-		});
-	}
-
-	/**
-	 **********************************
-	 **********************************
-	 */
-	$scope.selectTab = function(tab) {
-		angular.forEach($scope.activeTab, function(val, key) {
-			$scope.activeTab[key] = (key == tab);
-		});
-	}
-
-	/**
-	 **********************************
-	 **********************************
-	 */
-	$scope.selectDsTab = function(tab) {
-		var tabList;
-		if ($scope.activeTab['history']) {
-			tabList = $scope.historyDsTab;
-		} else if ($scope.activeTab['running']) {
-			tabList = $scope.runningDsTab;
-		} else {
-			return;
-		}
-
-		angular.forEach(tabList, function(val, key) {
-			tabList[key] = (key == tab);
-		});
-	}
-
-	/**
-	 **********************************
-	 **********************************
-	 */
-	$scope.toggleAutoReload = function() {
-		if ($scope.activeTab['history']) {
-			$scope.historyAutoLoading = !$scope.historyAutoLoading;
-			if ($scope.historyAutoLoading) {
-				$scope.historyTimerPromise = $interval(function() { $scope.loadHistory() }, 10000);
-				$scope.loadHistory();
-			} else {
-				$interval.cancel($scope.historyTimerPromise);
-			}
-		} else if ($scope.activeTab['running']) {
-			$scope.runningAutoLoading = !$scope.runningAutoLoading;
-			if ($scope.runningAutoLoading) {
-				$scope.runningTimerPromise = $interval(function() { $scope.loadRunning() }, 10000);
-				$scope.loadRunning();
-			} else {
-				$interval.cancel($scope.runningTimerPromise);
-			}
-		}
-	}
-
-	/**
-	 **********************************
-	 * 実行済SQLのロード
-	 **********************************
-	 */
-	$scope.loadHistory = function() {
-		var defer = $q.defer();
-		sendRequest("../history", $scope.servers).then(function(res) {
-			res[$scope.allQueriesTab] = Object.keys(res)
-						.reduce(function(prev, cur) { return prev.concat(res[cur]) }, [])
-						.sort(function(a, b) { return b.time - a.time });
-			$scope.historyMap = res;
-			return defer.resolve();
-		}).finally(function() {
-			$scope.historyLastUpdate = new Date();
-		});
-		return defer.promise;
-	}
-
-	/**
-	 **********************************
-	 * 実行中SQLのロード
-	 **********************************
-	 */
-	$scope.loadRunning = function() {
-		var defer = $q.defer();
-		sendRequest("../running", $scope.servers).then(function(res) {
-			// 全DSの結果をマージしてソートする
-			res[$scope.allQueriesTab] = Object.keys(res)
-				.reduce(function(prev, cur) { return prev.concat(res[cur]) }, [])
-				.sort(function(a, b) { return b.time - a.time });
-			$scope.runningMap = res;
-			return defer.resolve();
-		}).finally(function() {
-			$scope.runningLastUpdate = new Date();
-		});
-		return defer.promise;
-	}
-
-	/**
-	 **********************************
-	 * 設定情報のロード
-	 **********************************
-	 */
-	$scope.loadSetting = function() {
-		var defer = $q.defer();
-		sendRequest("../setting").then(function(res) {
-			$scope.settings = res;
-			return defer.resolve();
-		});
-		return defer.promise;
-	}
-
-	/**
-	 **********************************
-	 * 設定情報のセーブ
-	 **********************************
-	 */
-	$scope.saveSetting = function() {
-		console.log("call save setting.");
-	}
-
-	/**
-	 **********************************
-	 **********************************
-	 */
-	function sendRequest(url, servers) {
-		$scope.isLoading = true;
-		return $http({
-			method: "GET",
-			url: url,
-			params: {
-				servers: servers,
-			},
-			cache: false
-		}).then(function(res) {
-			return res.data;
-		}).finally(function() {
-			$scope.isLoading = false;
-		});
-	}
-});
 </script>
 <head>
 <body ng-controller="appCtrl" ng-init="init()">
@@ -256,27 +20,18 @@ app.controller("appCtrl", function($scope, $http, $q, $interval, hotkeys) {
 <uib-tabset>
 	<uib-tab select="selectTab('history')" active="activeTab['history']">
 		<uib-tab-heading>
-			<b><i class="glyphicon glyphicon-ok"></i> <u>H</u>istory</b>
+			<b><i class="glyphicon glyphicon-ok"></i> History(<u>Q</u>)</b>
 		</uib-tab-heading>
-
 		<br>
-
 		<div class="form-inline pull-right">
-
 			<label>AutoReload(<u>T</u>) :
 				<input type="checkbox" ng-model="historyAutoLoading" ng-click="toggleAutoReload()">
 			</label>
-
-			&nbsp;
-
 			<button class="btn btn-primary" ng-click="loadHistory()">
 				<i class="glyphicon glyphicon-refresh glyphicon-refresh-animate" ng-show="isLoading"></i>
 				<i class="glyphicon glyphicon-refresh" ng-show="!isLoading"></i> <u>R</u>eload
 			</button>
-
 			<span class="alert alert-info display:inline-box">Last Update {{ historyLastUpdate | date:'HH:mm:ss' }}</span>
-
-
 		</div>
 
 		<uib-tabset type="pills">
@@ -284,9 +39,7 @@ app.controller("appCtrl", function($scope, $http, $q, $interval, hotkeys) {
 				<uib-tab-heading>
 					{{ dsName }}(<u>{{ $index + 1 }}</u>)
 				</uib-tab-heading>
-
-<br>
-				<table class="table table-condensed table-bordered">
+				<table class="table table-condensed table-striped table-bordered">
 					<thead class="bg-primary">
 						<tr>
 							<th class="text-center col-md-1">No.</th>
@@ -301,7 +54,7 @@ app.controller("appCtrl", function($scope, $http, $q, $interval, hotkeys) {
 							<td align="right">{{ idx + 1 }}</td>
 							<td>{{ elem.time | date:'yyyy/MM/dd HH:mm:ss.sss'}}</td>
 							<td align="right">{{ elem.elapsed | number }} ms</td>
-							<td><span uib-tooltip="{{ elem.errorMsg }}" tooltip-popup-delay="500">{{ elem.sql }}</span></td>
+							<td><span class="word-wrap" uib-tooltip="{{ elem.errorMsg }}" tooltip-popup-delay="500">{{ elem.sql }}</span></td>
 							<td ng-if="dsName == allQueriesTab ">{{ elem.dataSource }}</td>
 						</tr>
 					</tbody>
@@ -312,24 +65,17 @@ app.controller("appCtrl", function($scope, $http, $q, $interval, hotkeys) {
 
 	<uib-tab select="selectTab('running')" active="activeTab['running']">
 		<uib-tab-heading>
-			<b><i class="glyphicon glyphicon-play"></i> Running <u>Q</u>ueries</b>
+			<b><i class="glyphicon glyphicon-play"></i> Running Queries(<u>W</u>)</b>
 		</uib-tab-heading>
-
 		<br>
-
 		<div class="form-inline pull-right">
-
 			<label>AutoReload(<u>T</u>) :
 				<input type="checkbox" ng-model="runningAutoLoading" ng-click="toggleAutoReload()">
 			</label>
-
-			&nbsp;
-
 			<button class="btn btn-primary" ng-click="loadRunning()">
 				<i class="glyphicon glyphicon-refresh glyphicon-refresh-animate" ng-show="isLoading"></i>
 				<i class="glyphicon glyphicon-refresh" ng-show="!isLoading"></i> <u>R</u>eload
 			</button>
-
 			<span class="alert alert-info">Last Update {{ runningLastUpdate | date:'HH:mm:ss' }}</span>
 		</div>
 
@@ -338,10 +84,7 @@ app.controller("appCtrl", function($scope, $http, $q, $interval, hotkeys) {
 				<uib-tab-heading>
 					{{ dsName }}(<u>{{ $index + 1 }}</u>)
 				</uib-tab-heading>
-
-<br>
-
-				<table class="table table-condensed table-bordered">
+				<table class="table table-condensed _table-striped table-bordered">
 					<thead class="bg-primary">
 						<tr>
 							<th class="text-center col-md-1">No.</th>
@@ -356,7 +99,7 @@ app.controller("appCtrl", function($scope, $http, $q, $interval, hotkeys) {
 							<td class="text-center">{{ idx + 1 }}</td>
 							<td>{{ elem.time | date:'yyyy/MM/dd HH:mm:ss.sss'}}</td>
 							<td class="text-center">{{ elem.elapsed | number }} ms</td>
-							<td>{{ elem.sql }}</td>
+							<td><span class="word-wrap">{{ elem.sql }}</span></td>
 							<td ng-if="dsName == allQueriesTab ">{{ elem.dataSource }}</td>
 						</tr>
 					</tbody>
@@ -367,35 +110,40 @@ app.controller("appCtrl", function($scope, $http, $q, $interval, hotkeys) {
 
 	<uib-tab select="selectTab('setting')"  active="activeTab['setting']">
 		<uib-tab-heading>
-			<b><i class="glyphicon glyphicon-wrench"></i> <u>S</u>ettings</b>
+			<b><i class="glyphicon glyphicon-wrench"></i> Settings(<u>E</u>)</b>
 		</uib-tab-heading>
 
 		<br>
 
 		<div class="row">
 			<div class="input-group">
-				<input type="text" class="form-control" placeholder="server1:80, server2:80">
+				<input type="text" class="form-control col-md-12" ng-model="servers" placeholder="server1:80, server2:80">
 				<span class="input-group-btn">
-					<button type-"button" class="btn btn-default">save servers</button>
+					<button type-"button" class="btn btn-primary" ng-click="saveServers(servers)">save servers</button>
 				</span>
 			</div>
 		</div>
 
-		<hr>
+		<br>
 
 		<div class="form-inline pull-right">
-			<button class="btn btn-default input-sm" ng-click="loadSetting()">
-				<i class="glyphicon glyphicon-refresh"></i> Load Setting
+			<button class="btn btn-primary" ng-click="loadSetting()">
+				<i class="glyphicon glyphicon-refresh glyphicon-refresh-animate" ng-show="isLoading"></i>
+				<i class="glyphicon glyphicon-refresh" ng-show="!isLoading"></i> <u>R</u>eload
 			</button>
-			<button class="btn btn-default input-sm" ng-click="saveSetting()">
+			<button class="btn btn-default" ng-click="saveSetting()">
 				<i class="glyphicon glyphicon-ok"></i> Save Setting
 			</button>
 		</div>
 
 		<uib-tabset>
-			<uib-tab ng-repeat="(dsName, list) in settings" heading="{{ dsName }}">
-					<table class="table table-condensed _table-striped table-bordered">
-					<thead class="bg-default">
+		<uib-tabset type="pills">
+			<uib-tab ng-repeat="(dsName, list) in settings" select="selectDsTab(dsName)" active="settingDsTab[dsName]">
+				<uib-tab-heading>
+					{{ dsName }}(<u>{{ $index + 1 }}</u>)
+				</uib-tab-heading>
+  					<table class="table table-condensed table-bordered">
+					<thead class="bg-primary">
 						<tr>
 							<th class="text-center col-md-2">Item</th>
 							<th class="text-center col-md-10">value</th>
@@ -403,17 +151,14 @@ app.controller("appCtrl", function($scope, $http, $q, $interval, hotkeys) {
 					</thead>
 					<tbody>
 						<tr ng-repeat="(key, value) in list">
-							<th class="text-right bg-primary">{{ key }}</th>
-							<td><input type="text" class="form-control input-sm" name="{{key}}" value="{{value}}"></td>
+							<th class="text-right bg-info">{{ key }}</th>
+							<td><input type="text" class="form-control input-sm" ng-model="list[key]"></td>
 						</tr>
 					</tbody>
 				</table>
 			</uib-tab>
 		 </uib-tabset>
-
 	</uib-tab>
-
 </uib-tabset>
-
 </body>
 </html>

@@ -47,12 +47,12 @@ public class SettingApi extends AbstractApi {
 			bos = new BufferedOutputStream(res.getOutputStream());
 			res.setContentType("application/json; charset=UTF-8");
 
-			long lastUpdate = 0L;
 			Map<String, Map<String, Object>> settings = getSettingData(req.getServerPort());
-			for(Entry<String, Map<String, Object>> entry : settings.entrySet()) {
-				lastUpdate = Math.max((Long)entry.getValue().remove("lastUpdate"), lastUpdate);
-			}
-			res.setDateHeader("Last-modified", lastUpdate);
+			//long lastUpdate = 0L;
+			//for(Entry<String, Map<String, Object>> entry : settings.entrySet()) {
+			//	lastUpdate = Math.max((Long)entry.getValue().remove("lastUpdate"), lastUpdate);
+			//}
+			//res.setDateHeader("Last-modified", lastUpdate);
 
 			// 整形して出力
 			JSON.encode(settings, bos, true);

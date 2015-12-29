@@ -16,22 +16,27 @@
 package info.bunji.jdbc.rest;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.util.Enumeration;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
+import javax.naming.InitialContext;
+import javax.naming.NameClassPair;
+import javax.naming.NamingEnumeration;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 
 public class RestApiServlet extends HttpServlet {
 
 	/** 呼び出し可能なAPIクラスのマッピング */
-	private Map<String, AbstractApi> apiMap = new HashMap<String, AbstractApi>();
+	private Map<String, AbstractApi> apiMap = new LinkedHashMap<String, AbstractApi>();
 
 	/*
 	 * (非 Javadoc)
@@ -41,6 +46,20 @@ public class RestApiServlet extends HttpServlet {
 	@Override
 	public void init() throws ServletException {
 		super.init();
+
+		// データソース初期化のため、一旦コネクションを取得する
+		try {
+			InitialContext ctx = new InitialContext();
+			NamingEnumeration<NameClassPair> ne = ctx.list("java:comp/env/jdbc");
+			while (ne.hasMoreElements()) {
+				NameClassPair nc = ne.nextElement();
+				DataSource ds = (DataSource) ctx.lookup("java:comp/env/jdbc/" + nc.getName());
+				Connection conn = ds.getConnection();
+				if (conn != null) conn.close();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
 		ServletContext context = getServletContext();
 		apiMap.put("ui", new ResourceApi(context));
@@ -83,7 +102,7 @@ public class RestApiServlet extends HttpServlet {
 				if (d.getClass().getClassLoader() == getClass().getClassLoader()) {
 					// コンテキストクラスローダでロードされたものみアンロードする
 					DriverManager.deregisterDriver(d);
-					ctx.log("deregister driver [" + d.getClass().getName() + "] (from context classloader)");
+					ctx.log("deregister driver [" + d.getClass().getName() + "] (from webapp classloader)");
 				}
 			}
 		} catch (Exception e) {
@@ -106,6 +125,7 @@ public class RestApiServlet extends HttpServlet {
 			throws ServletException, IOException {
 
 		String pathInfo = req.getPathInfo();
+		if (pathInfo == null) pathInfo = "/";
 
 		// API名及びパラメータを抽出
 		// [0] empty
@@ -113,17 +133,24 @@ public class RestApiServlet extends HttpServlet {
 		// [2] api名以降のURI
 		String[] params = pathInfo.split("/", 3);
 		if (params.length > 1) {
-			req.setAttribute("API", params[1]); // API名
-			req.setAttribute("API_PATH", params.length > 2 ? params[2] : null);
-
-			AbstractApi api = apiMap.get(params[1]);
-			if (api != null) {
-				// 対象が見つかった場合、処理を委譲する
-				api.service(req, res);
-				return;
+			if (!params[1].isEmpty()) {
+				req.setAttribute("API_PATH", params.length > 2 ? params[2] : null);
+				AbstractApi api = apiMap.get(params[1]);
+				if (api != null) {
+					// 対象が見つかった場合、処理を委譲する
+					api.service(req, res);
+					return;
+				}
+			} else {
+				// API未指定時
+				String uri = req.getRequestURI();
+				if (!uri.endsWith("/")) uri += "/";
+				res.sendRedirect(uri + "ui/");
 			}
 		}
+
 		// 対象のAPIが見つからない場合
 		res.setStatus(HttpServletResponse.SC_NOT_FOUND);
 	}
 }
+

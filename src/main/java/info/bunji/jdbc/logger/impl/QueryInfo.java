@@ -54,4 +54,14 @@ public class QueryInfo implements Cloneable, Comparable<QueryInfo> {
 	public int compareTo(QueryInfo o) {
 		return (int)(o.getTime() - time);
 	}
+
+	@Override
+	public QueryInfo clone() {
+		try {
+			// shallow copy
+			return (QueryInfo) super.clone();
+		} catch (CloneNotSupportedException cnse) {
+			throw new InternalError(cnse.getMessage());
+		}
+	}
 }

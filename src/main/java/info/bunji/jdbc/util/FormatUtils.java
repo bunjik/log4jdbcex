@@ -15,6 +15,10 @@
  */
 package info.bunji.jdbc.util;
 
+import java.lang.reflect.Field;
+
+import blanco.commons.sql.format.BlancoSqlFormatter;
+import blanco.commons.sql.format.BlancoSqlRule;
 
 /**
  *
@@ -22,13 +26,35 @@ package info.bunji.jdbc.util;
  */
 public class FormatUtils {
 
-	private static SQLFormatter formatter = new SQLFormatter();
+	private static final BlancoSqlRule rule = new BlancoSqlRule();
 
+	private static final BlancoSqlFormatter formatter;
+
+	static {
+		// SQLキーワードは大文字に変換
+		rule.setKeywordCase(BlancoSqlRule.KEYWORD_UPPER_CASE);
+		try {
+			// 可能ならインデントを変更
+			Field field = rule.getClass().getField("indentSring");
+			field.setAccessible(true);
+			field.set(rule, "  ");
+		} catch (Exception e) {}
+
+		formatter = new BlancoSqlFormatter(rule);
+	}
+
+	/**
+	 *
+	 * @param sql
+	 * @return
+	 */
 	public static String formatSql(final String sql) {
 		try {
-//			return formatter.prettyPrint(sql).toString();
-//			return formatter.format(sql);
-return sql;
+			// ThreadSafeではないため、インスタンスを生成する
+			//return new BlancoSqlFormatter(rule).format(sql);
+			synchronized (formatter) {
+				return formatter.format(sql);
+			}
 		} catch (Exception e) {
 			// not formated.
 			return sql;

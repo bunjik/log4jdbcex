@@ -44,7 +44,7 @@ public class CommonsLoggingJdbcLogger extends AbstractJdbcLogger {
 	@Override
 	public void debug(String msg, Object... args) {
 		if (debugLogger.isDebugEnabled())
-		debugLogger.debug(String.format(msg, args));
+		debugLogger.debug(msg != null ? String.format(msg, args) : null);
 	}
 
 	@Override

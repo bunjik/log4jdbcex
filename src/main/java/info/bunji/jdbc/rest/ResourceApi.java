@@ -45,7 +45,6 @@ public class ResourceApi extends AbstractApi {
 	public ResourceApi(ServletContext context) {
 		super(context);
 		resourceBase = getClass().getPackage().getName().replace(".", "/") + "/";
-		//resourceBase = "/ui/";
 		logger.trace(resourceBase);
 	}
 
@@ -64,9 +63,14 @@ public class ResourceApi extends AbstractApi {
 		InputStream  is = null;
 		try {
 			String path = getApiPath(req);
-
 			// ファイル名が指定されていない場合、"index.html"を補完
-			if (path == null || path.isEmpty() || path.endsWith("/")) path += "index.html";
+			if (path == null) {
+				res.sendRedirect(req.getRequestURI() + "/");
+				return;
+			} else if (path.isEmpty() || path.endsWith("/")) {
+				path += "index.html";
+			}
+			logger.trace(path);
 			is = getResourceStream(path);
 			if (is == null) {
 				res.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -76,9 +80,9 @@ public class ResourceApi extends AbstractApi {
 				String mimeType = context.getMimeType(getApiPath(req));
 				if (mimeType != null) res.setContentType(mimeType);
 				res.setCharacterEncoding("utf-8");
-				res.setBufferSize(2048);
+				res.setBufferSize(4096);
 				OutputStream os = res.getOutputStream();
-				byte[] buf = new byte[2048];
+				byte[] buf = new byte[4096];
 				int len;
 				while((len = is.read(buf)) > 0) {
 					os.write(buf, 0, len);

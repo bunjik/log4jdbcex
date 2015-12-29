@@ -31,12 +31,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
+import info.bunji.jdbc.logger.JdbcLogger;
+import info.bunji.jdbc.logger.JdbcLoggerFactory;
+
 /**
  *
  */
 public class TestQueryApi extends AbstractApi {
 
-//	private DataSource ds;
+	protected JdbcLogger logger = JdbcLoggerFactory.getLogger();
 
 	private Random rand = new Random();
 
@@ -48,12 +51,7 @@ public class TestQueryApi extends AbstractApi {
 
 	@Override
 	public void init() {
-
-//		try {
-//			conn = ds.getConnection();
-//		} catch(Exception e) {
-//			e.printStackTrace();
-//		}
+		// do nothing.
 	}
 
 	@Override
@@ -79,7 +77,6 @@ public class TestQueryApi extends AbstractApi {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	@Override
@@ -92,11 +89,11 @@ public class TestQueryApi extends AbstractApi {
 		Statement stmt = null;
 		try {
 			String[] sql = new String[] {
-				//"SELECT count(*) as COUNT FROM JdbcTest",
-				"SeleCt 1",
+				"SELECT count(*) as COUNT FROM JdbcTest",
 				"Select aaa as item1,\nbbb as item2, ccc as item3 from dual",
-				//"ERROR 1 as ABC",
 				"SELECT 1 as ABC, 2 as DEF",
+				//"ERROR 1 as ABC",
+				//"SeleCt 1",
 			};
 
 			//stmt = conn.createStatement();

@@ -15,11 +15,11 @@
  */
 package info.bunji.jdbc.logger.impl;
 
-import info.bunji.jdbc.logger.JdbcLogger;
-
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+
+import info.bunji.jdbc.logger.JdbcLogger;
 
 /**
  * JDKのログAPIを利用する実装クラス
@@ -49,7 +49,7 @@ public class JdkJdbcLogger extends AbstractJdbcLogger implements JdbcLogger {
 	@Override
 	public void debug(String msg, Object... args) {
 		if (debugLogger.isLoggable(Level.FINE))
-		debugLogger.fine(String.format(msg, args));
+		debugLogger.fine(msg != null ? String.format(msg, args) : null);
 	}
 
 	@Override
