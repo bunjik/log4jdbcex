@@ -38,12 +38,6 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 			<version>1.7.12</version>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-simple</artifactId>
-			<version>1.7.12</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -59,19 +53,17 @@
 			<scope>provided</scope>
 		</dependency>
 
-<!-- for spring -->
-<dependency>
-	<groupId>org.springframework</groupId>
-	<artifactId>spring-web</artifactId>
-	<version>4.2.4.RELEASE</version>
-	<scope>provided</scope>
-</dependency>
-
 		<!-- for Test -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-			<version>1.4.188</version>
+			<version>1.4.190</version>
+  			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
+			<version>1.7.12</version>
   			<scope>test</scope>
 		</dependency>
 	</dependencies>
