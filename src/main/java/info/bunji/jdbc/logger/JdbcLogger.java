@@ -18,9 +18,9 @@ package info.bunji.jdbc.logger;
 import java.util.Collection;
 import java.util.Map;
 
-import info.bunji.jdbc.LoggerHelper;
 import info.bunji.jdbc.logger.impl.QueryInfo;
 import info.bunji.jdbc.specifics.RdbmsSpecifics;
+import info.bunji.jdbc.util.LoggerHelper;
 
 /**
  *

@@ -17,6 +17,8 @@ package info.bunji.jdbc.rest;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,8 +52,26 @@ public class TestQueryApi extends AbstractApi {
 	}
 
 	@Override
-	public void init() {
-		// do nothing.
+	public void init() throws ServletException {
+		super.init();
+
+		if (connList.isEmpty()) {
+			initDatasource();
+
+			Statement stmt = null;
+			for (Connection conn : connList) {
+				try {
+					stmt = conn.createStatement();
+					stmt.execute("create table test(aaa int)");
+				} catch (Exception e) {
+					// do nothing.
+				} finally {
+					if(stmt != null) {
+						try { stmt.close(); } catch(Exception e) {}
+					}
+				}
+			}
+		}
 	}
 
 	@Override
@@ -82,32 +102,40 @@ public class TestQueryApi extends AbstractApi {
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse res)
 										throws ServletException, IOException {
-		if (connList.isEmpty()) {
-			initDatasource();
-		}
-
 		Statement stmt = null;
 		try {
+			if(rand.nextInt(2) == 0) {
+//if(false) {
 			String[] sql = new String[] {
-				"SELECT count(*) as COUNT FROM JdbcTest",
-				"Select aaa as item1,\nbbb as item2, ccc as item3 from dual",
-				"SELECT 1 as ABC, 2 as DEF",
-				//"ERROR 1 as ABC",
-				//"SeleCt 1",
-			};
+					"SELECT count(*) as COUNT FROM JdbcTest",
+					"Select aaa as item1,\nbbb as item2, ccc as item3 from dual",
+					"SELECT 1 as ABC, 2 as DEF",
+					//"ERROR 1 as ABC",
+					//"SeleCt 1",
+				};
 
-			//stmt = conn.createStatement();
-			stmt = connList.get(rand.nextInt(connList.size())).createStatement();
-			stmt.executeQuery(sql[rand.nextInt(sql.length)]);
+				//stmt = conn.createStatement();
+				stmt = connList.get(rand.nextInt(connList.size())).createStatement();
+				stmt.executeQuery(sql[rand.nextInt(sql.length)]);
 //			stmt.executeQuery(sql[rand.nextInt(sql.length)]);
 //stmt.addBatch("UPDATE jdbctest SET");
 //stmt.addBatch(sql[rand.nextInt(sql.length)]);
 //stmt.addBatch(sql[rand.nextInt(sql.length)]);
 //stmt.executeBatch();
-
+			} else {
+				String sql = "SELECT * from test where aaa=?";
+				PreparedStatement pstmt = connList.get(rand.nextInt(connList.size())).prepareStatement(sql);
+				pstmt.setInt(1, 1);
+//				pstmt.setString(1, "1");
+//				pstmt.setBinaryStream(1, new ByteArrayInputStream(new byte[0]));
+ResultSet rs = pstmt.executeQuery();
+rs.close();
+			}
 			res.setStatus(HttpServletResponse.SC_OK);
 		} catch(Exception e) {
-			logger.error(e.getMessage());
+//logger.error("error in TestQueryAPI(" + e.getMessage() + ")");
+//			logger.error(e.getMessage(), e);
+//			logger.error(e.getMessage());
 //			res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			res.setStatus(HttpServletResponse.SC_OK);
 		} finally {

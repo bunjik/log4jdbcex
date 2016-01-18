@@ -23,11 +23,6 @@
 			<version>1.3.10</version>
 		</dependency>
 		<dependency>
-			<groupId>com.orangesignal</groupId>
-			<artifactId>orangesignal-csv</artifactId>
-			<version>2.2.1</version>
-		</dependency>
-		<dependency>
 			<groupId>blanco</groupId>
 			<artifactId>blancosqlformatter</artifactId>
 			<version>0.1.0</version>
@@ -64,6 +59,14 @@
 			<scope>provided</scope>
 		</dependency>
 
+<!-- for spring -->
+<dependency>
+	<groupId>org.springframework</groupId>
+	<artifactId>spring-web</artifactId>
+	<version>4.2.4.RELEASE</version>
+	<scope>provided</scope>
+</dependency>
+
 		<!-- for Test -->
 		<dependency>
 			<groupId>com.h2database</groupId>
@@ -77,6 +80,7 @@
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.3</version>
 				<configuration>
 					<source>1.6</source>
 					<target>1.6</target>
@@ -86,6 +90,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.19</version>
 				<configuration>
 					<skipTests>true</skipTests>
 				</configuration>

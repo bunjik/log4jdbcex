@@ -25,11 +25,11 @@ import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -59,7 +59,7 @@ public abstract class AbstractApi extends HttpServlet {
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
-		hostName = ia != null ? ia.getHostName() : "unknownHost";
+		hostName = (ia != null ? ia.getHostName() : "unknownHost");
 	}
 
 	/* (非 Javadoc)
@@ -184,8 +184,7 @@ public abstract class AbstractApi extends HttpServlet {
 		String method = req.getMethod();
 
 		// リクエストURL一覧を生成(サーバの重複を除外)
-//		Set<String> sendList = new TreeSet<String>();
-List<String> sendList = new ArrayList<String>();
+		Set<String> sendList = new TreeSet<String>();
 		for (String server : servers) {
 			String requestUrl = scheme + server.trim() + uri;
 			sendList.add(requestUrl);

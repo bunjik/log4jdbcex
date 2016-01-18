@@ -28,11 +28,13 @@ import javax.naming.NameClassPair;
 import javax.naming.NamingEnumeration;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
+@WebServlet(name="RestApiServlet",urlPatterns={"/log4jdbcex"})
 public class RestApiServlet extends HttpServlet {
 
 	/** 呼び出し可能なAPIクラスのマッピング */
@@ -47,12 +49,15 @@ public class RestApiServlet extends HttpServlet {
 	public void init() throws ServletException {
 		super.init();
 
+		ServletContext context =getServletContext();
+
 		// データソース初期化のため、一旦コネクションを取得する
 		try {
 			InitialContext ctx = new InitialContext();
 			NamingEnumeration<NameClassPair> ne = ctx.list("java:comp/env/jdbc");
 			while (ne.hasMoreElements()) {
 				NameClassPair nc = ne.nextElement();
+				context.log(nc.getName());
 				DataSource ds = (DataSource) ctx.lookup("java:comp/env/jdbc/" + nc.getName());
 				Connection conn = ds.getConnection();
 				if (conn != null) conn.close();
@@ -61,7 +66,6 @@ public class RestApiServlet extends HttpServlet {
 			e.printStackTrace();
 		}
 
-		ServletContext context = getServletContext();
 		apiMap.put("ui", new ResourceApi(context));
 		apiMap.put("setting", new SettingApi(context));
 		apiMap.put("history", new HistoryApi(context));

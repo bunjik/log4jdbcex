@@ -15,9 +15,6 @@
  */
 package info.bunji.jdbc;
 
-import info.bunji.jdbc.logger.JdbcLogger;
-import info.bunji.jdbc.logger.JdbcLoggerFactory;
-
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -28,6 +25,9 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+
+import info.bunji.jdbc.logger.JdbcLogger;
+import info.bunji.jdbc.logger.JdbcLoggerFactory;
 
 /**
  * @author f.kinoshita
@@ -77,7 +77,6 @@ public class DriverEx implements Driver {
 			String driverClass = it.next();
 			try {
 				Class.forName(driverClass);
-				logger.info("FOUND DRIVER " + driverClass);
 			} catch (Throwable c) {
 				it.remove();
 			}
@@ -87,12 +86,16 @@ public class DriverEx implements Driver {
 		int count = 0;
 		Enumeration<Driver> drivers = DriverManager.getDrivers();
 		while(drivers.hasMoreElements()) {
-			drivers.nextElement();
-			count++;
+			Driver driver = drivers.nextElement();
+			if (!driver.getClass().equals(DriverEx.class)) {
+				logger.debug("Found driver : " + driver.getClass().getName());
+				count++;
+			}
 		}
+
 		// 自分以外のDriverが見つからない場合
-		if (count <= 1) {
-			logger.info("WARNING! jdbc driver not found.");
+		if (count == 0) {
+			logger.info("jdbc driver not found.");
 		}
 	}
 
@@ -167,7 +170,7 @@ public class DriverEx implements Driver {
 	 */
 	@Override
 	public Connection connect(String url, Properties info) throws SQLException {
-
+		// get real driver
 		Driver d = getUnderlyingDriver(url);
 		if (d == null) {
 			return null;
@@ -183,8 +186,11 @@ public class DriverEx implements Driver {
 		}
 
 		// ロギングが有効、またはCSVロードが有効な場合は、ラップしたコネクションを返す
-		if (logger.isJdbcLoggingEnabled() || parsedUrl[1] != null) {
-			conn = new ConnectionEx(conn, realUrl, parsedUrl[1]);
+		//if (logger.isJdbcLoggingEnabled() || parsedUrl[1] != null) {
+		//	conn = new ConnectionEx(conn, realUrl, parsedUrl[1]);
+		//}
+		if (logger.isJdbcLoggingEnabled()) {
+			conn = ProxyFactory.wrapConnection(conn, realUrl);
 		}
 		return conn;
 	}
@@ -225,4 +231,9 @@ public class DriverEx implements Driver {
 	public boolean jdbcCompliant() {
 		return realDriver != null && realDriver.jdbcCompliant();
 	}
+
+//	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+//		return realDriver.getParentLogger();
+//		return null;
+//	}
 }

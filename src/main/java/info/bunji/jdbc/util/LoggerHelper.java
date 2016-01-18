@@ -13,27 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package info.bunji.jdbc;
+package info.bunji.jdbc.util;
 
-import info.bunji.jdbc.logger.JdbcLogger;
-import info.bunji.jdbc.logger.JdbcLoggerFactory;
-import info.bunji.jdbc.specifics.RdbmsSpecifics;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import net.arnx.jsonic.JSON;
+import info.bunji.jdbc.logger.JdbcLogger;
+import info.bunji.jdbc.logger.JdbcLoggerFactory;
+import info.bunji.jdbc.specifics.RdbmsSpecifics;
 
 /**
  *
@@ -44,8 +35,8 @@ public abstract class LoggerHelper {
 	/** このインスタンスが利用するLogger */
 	protected JdbcLogger logger;
 
-	/** ConnectionExオブジェクト */
-	protected ConnectionEx connEx;
+	/** 接続URL */
+	protected String url;
 
 	/** クエリの実行開始時間 */
 	protected long _startTime = 0L;
@@ -67,144 +58,9 @@ public abstract class LoggerHelper {
 	/** パラメータ置換用の正規表現 */
 	private static final Pattern PARAM_REGEX = Pattern.compile("\\?");
 
-	/** テスト用の設定情報を保持する(接続URL毎) */
-	private static final Map<String,Setting> testSettingMap = new HashMap<String,Setting>();
-
-	/** 現在のコネクションに対応するテスト設定情報 */
-	private Setting currentSetting;
-
-	/**
-	 ********************************************
-	 * テスト設定を保持するクラス
-	 ********************************************
-	 */
-	class Setting {
-		private Map<Pattern,String> patternMap = new LinkedHashMap<Pattern,String>();
-
-		private boolean isFakeCommit = false;
-
-		/**
-		 *
-		 * @param regex
-		 * @param fileName
-		 */
-		void addPattern(String regex, String fileName) {
-			Pattern pattern = Pattern.compile(regex);
-			// ファイルの存在チェックをする？
-			if ((new File(fileName)).exists()) {
-				patternMap.put(pattern, fileName);
-				logger.info(String.format("accept setting. regex=[%s] datafile=[%s]", regex, fileName));
-			} else {
-				logger.warn(String.format("datafile not found. disable setting. regex=[%s] filename=[%s]", regex, fileName));
-			}
-		}
-
-		/**
-		 *
-		 * @param sql チェック対象SQL
-		 * @return パターンに一致する対象のテストファイル名。一致するものがない場合はnullを返す。
-		 */
-		String matchPattern(String sql) {
-			String fileName = null;
-			for (Entry<Pattern,String> entry : patternMap.entrySet()) {
-				if (entry.getKey().matcher(sql).find()) {
-					fileName = entry.getValue();
-					logger.debug("match sql : datafile is " + fileName);
-					break;
-				}
-			}
-			return fileName;
-		}
-
-		private void setFakeCommit(boolean flag) {
-			isFakeCommit = flag;
-		}
-
-		boolean isFakeCommit() {
-			return isFakeCommit;
-		}
-	}
-
-	/**
-	 ********************************************
-	 * コンストラクタ
-	 * @param conn
-	 ********************************************
-	 */
-	LoggerHelper(ConnectionEx conn) {
-		if (conn != null) {
-			setConnectionEx(conn);
-		}
-	}
-
-	/**
-	 ********************************************
-	 * ConnecionExをセットする.
-	 * ConnecionExが自身を登録するために利用するものであり、通常は利用しない。
-	 * すでに設定されている場合は何もしない。
-	 * @param conn
-	 ********************************************
-	 */
-	protected void setConnectionEx(ConnectionEx conn) {
-		if (connEx == null) {
-			this.connEx = conn;
-			String url = connEx.getUrl();
-			logger = JdbcLoggerFactory.getLogger(url);
-
-			// 初回のみ設定を読み込む
-			synchronized (testSettingMap) {
-				if (!testSettingMap.containsKey(url)) {
-					InputStream is = null;
-					String testFileName = conn.getTestConfigName();
-					Setting setting = new Setting();
-					if (testFileName != null) {
-						try {
-							is = new FileInputStream(testFileName);
-							Map<String,?> tmpMap = JSON.decode(is);
-
-							// ログ出力設定の読み込み
-							if (tmpMap.containsKey("logSetting")) {
-								@SuppressWarnings("unchecked")
-								Map<String,Object> logMap = (Map<String,Object>) tmpMap.get("logSetting");
-								logger.setSetting(logMap);
-								logger.printSetting();
-							}
-							// テスト用設定の読み込み
-							if (tmpMap.containsKey("testSetting")) {
-								@SuppressWarnings("unchecked")
-								Map<String,?> testMap = (Map<String,?>) tmpMap.get("testSetting");
-								@SuppressWarnings("unchecked")
-								List<Map<String,String>> patternList = (List<Map<String,String>>)testMap.get("pattern");
-								for (Map<String,String> pattern : patternList) {
-									setting.addPattern(pattern.get("regex"), pattern.get("file"));
-								}
-								if (tmpMap.containsKey("fakeCommit")) {
-									setting.setFakeCommit((Boolean)tmpMap.get("fakeCommit"));
-								}
-								logger.debug("test setting loaded.[" +testFileName + "]");
-							}
-						} catch (Exception e) {
-							logger.error("test setting load error:" + e.getMessage());
-						} finally {
-							try { if (is != null) is.close(); } catch(Exception e) {}
-						}
-					}
-					testSettingMap.put(url, setting);
-				}
-				currentSetting = testSettingMap.get(url);
-			}
-		} else {
-			logger.info("Wrapped Connection is already exists. do nothting.");
-		}
-	}
-
-	/**
-	 ********************************************
-	 *
-	 ********************************************
-	 */
-	boolean isFakeCommit() {
-		return currentSetting.isFakeCommit();
+	protected LoggerHelper(String url) {
+		this.url = url;
+		logger = JdbcLoggerFactory.getLogger(url);
 	}
 
 	/**
@@ -214,7 +70,7 @@ public abstract class LoggerHelper {
 	 * 実行中クエリのキューに自身を登録するとともに、開始時間を記録する
 	 ********************************************
 	 */
-	void startExecute(String sql) {
+	protected void startExecute(String sql) {
 		setSql(sql);
 		startExecute();
 	}
@@ -226,7 +82,7 @@ public abstract class LoggerHelper {
 	 * 実行中クエリのキューに自身を登録するとともに、開始時間を記録する
 	 ********************************************
 	 */
-	void startExecute() {
+	protected void startExecute() {
 		_queryId = UUID.randomUUID().toString();
 		_startTime = System.currentTimeMillis();
 		logger.addExecStatement(this);
@@ -240,32 +96,25 @@ public abstract class LoggerHelper {
 	 * ※finally節などで呼び出しを担保すること
 	 ********************************************
 	 */
-	void endExecute() {
+	protected void endExecute() {
 		logger.removeExecStatement(this);
 	}
 
 	/**
 	 ********************************************
-	 * Batch実行用のSQLを蓄積する
-	 * @param sql
+	 * 実行用のSQLを蓄積する
+	 * @param args addBatchメソッドの引数配列(最大１)
 	 ********************************************
 	 */
-	protected void addBatchList(String sql) {
+	protected void addBatchList(Object... args) {
 		// SQL文字列を追加する
 		if (_batchList == null) _batchList = new ArrayList<String>();
-		_batchList.add(sql);
-	}
-
-	/**
-	 ********************************************
-	 * Batch実行用のSQLを蓄積する
-	 * @param sql
-	 ********************************************
-	 */
-	protected void addBatchList() {
-		// パラメータ埋め込み後のSQL文字列を追加する
-		if (_batchList == null) _batchList = new ArrayList<String>();
-		_batchList.add(dumpSql());
+		if (args == null || args.length == 0) {
+			// パラメータ埋め込み後のSQL文字列を追加する
+			_batchList.add(dumpSql());
+		} else {
+			_batchList.add((String)args[0]);
+		}
 	}
 
 	protected void clearBatchList() {
@@ -293,18 +142,6 @@ public abstract class LoggerHelper {
 
 	ResultSet reportReturned(ResultSet execResult) {
 		logger.reportReturned(this);
-
-		// 指定条件に一致する場合、本来の結果ではなく
-		// CSVから読み込んだ結果を返す
-		String fileName = currentSetting.matchPattern(getSql());
-		if (fileName != null) {
-			try {
-				return new TestCsvResultSet(execResult, fileName);
-			} catch (Exception e) {
-				// エラー発生時
-				logger.error(e.getMessage(), e);
-			}
-		}
 		return execResult;
 	}
 
@@ -326,7 +163,7 @@ public abstract class LoggerHelper {
 		}
 	}
 
-	void reportException(Throwable t, Object... params) {
+	protected void reportException(Throwable t, Object... params) {
 		logger.reportException(this, t, params);
 	}
 
@@ -341,7 +178,7 @@ public abstract class LoggerHelper {
 		return _execSql;
 	}
 
-	String getSql() {
+	protected String getSql() {
 		return _execSql;
 	}
 

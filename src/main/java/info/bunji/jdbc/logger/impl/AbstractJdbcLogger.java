@@ -28,11 +28,11 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import info.bunji.jdbc.LoggerHelper;
 import info.bunji.jdbc.logger.JdbcLogger;
 import info.bunji.jdbc.specifics.OracleRdbmsSpecifics;
 import info.bunji.jdbc.specifics.RdbmsSpecifics;
 import info.bunji.jdbc.util.FormatUtils;
+import info.bunji.jdbc.util.LoggerHelper;
 
 public abstract class AbstractJdbcLogger implements JdbcLogger {
 
