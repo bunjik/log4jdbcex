@@ -33,7 +33,7 @@ import net.arnx.jsonic.JSON;
 /**
  *
  */
-public class SettingApi extends AbstractApi {
+class SettingApi extends AbstractApi {
 
 	public SettingApi(ServletContext context) {
 		super(context);
@@ -74,12 +74,17 @@ public class SettingApi extends AbstractApi {
 			// 接続URL単位の処理
 		for(Entry<String,Map<String,Object>> entry : setting.entrySet()) {
 			String url = entry.getKey().toString();
-			if (JdbcLoggerFactory.hasLogger(url)) {
-				JdbcLogger logger = JdbcLoggerFactory.getLogger(url);
+			JdbcLogger logger = JdbcLoggerFactory.getLogger(url);
+			if (logger != null) {
 				// 設定を反映
-				//logger.debug("save :" + JSON.encode(entry.getValue()));
 				logger.setSetting((Map<String,Object>)entry.getValue());
 			}
+//			if (JdbcLoggerFactory.hasLogger(url)) {
+//				JdbcLogger logger = JdbcLoggerFactory.getLogger(url);
+//				// 設定を反映
+//				//logger.debug("save :" + JSON.encode(entry.getValue()));
+//				logger.setSetting((Map<String,Object>)entry.getValue());
+//			}
 		}
 
 		// 更新後の設定情報を返す

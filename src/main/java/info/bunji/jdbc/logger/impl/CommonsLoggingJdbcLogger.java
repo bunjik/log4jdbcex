@@ -19,7 +19,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Commons-loggingのログAPIを利用する実装クラス
+ * logger implementation for Commons-logging.
  *
  * @author f.kinoshita
  */

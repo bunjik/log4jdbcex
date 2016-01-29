@@ -4,7 +4,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 /**
- * Log4jのログAPIを利用する実装クラス
+ * logger implementation for log4j.
  *
  * @author f.kinoshita
  */

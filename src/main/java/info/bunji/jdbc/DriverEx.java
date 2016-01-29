@@ -34,15 +34,16 @@ import info.bunji.jdbc.logger.JdbcLoggerFactory;
  */
 public class DriverEx implements Driver {
 
+	/** driver name */
 	public static final String DRIVER_NAME = "log4jdbcex";
 
-	/** このドライバの接続URLの前置詞 */
+	/** connection url prefix */
 	public static final String DRIVER_URL_PREFIX = "jdbc:" + DRIVER_NAME + ":";
 
-	public static JdbcLogger logger = JdbcLoggerFactory.getLogger();
+	private static JdbcLogger logger = JdbcLoggerFactory.getLogger();
 
-	/** 実際にDBに接続するドライバ */
-	protected Driver realDriver;
+	/** real jdbc driver */
+	private Driver realDriver;
 
 	static {
 		Set<String> subDrivers = new TreeSet<String>();

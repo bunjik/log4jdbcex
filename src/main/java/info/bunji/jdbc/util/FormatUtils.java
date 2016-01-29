@@ -44,9 +44,11 @@ public class FormatUtils {
 	}
 
 	/**
-	 *
-	 * @param sql
-	 * @return
+	 **********************************************
+	 * Format Sql String.
+	 * @param sql original sql
+	 * @return formatted sql
+	 **********************************************
 	 */
 	public static String formatSql(final String sql) {
 		try {

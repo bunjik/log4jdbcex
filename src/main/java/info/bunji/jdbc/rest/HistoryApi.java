@@ -36,7 +36,7 @@ import net.arnx.jsonic.JSON;
 /**
  *
  */
-public class HistoryApi extends AbstractApi {
+class HistoryApi extends AbstractApi {
 
 	public HistoryApi(ServletContext context) {
 		super(context);

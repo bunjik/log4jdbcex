@@ -25,7 +25,7 @@ import java.sql.Statement;
 /**
  *
  */
-public class ProxyFactory {
+class ProxyFactory {
 
 	private static final ProxyFactory factory = new ProxyFactory();
 
@@ -33,15 +33,12 @@ public class ProxyFactory {
 		super();
 	}
 
-//	static ProxyFactory getInstance() {
-//		return factory;
-//	}
-
 	/**
 	 ********************************************
 	 *
-	 * @param handler
-	 * @return
+	 * @param conn real connection
+	 * @param url jdbc url
+	 * @return wrapperd connection
 	 ********************************************
 	 */
 	static Connection wrapConnection(Connection conn, String url) {

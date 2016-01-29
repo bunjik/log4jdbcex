@@ -36,7 +36,7 @@ import net.arnx.jsonic.JSON;
 /**
  *
  */
-public class RunningQueriesApi extends AbstractApi {
+class RunningQueriesApi extends AbstractApi {
 
 	public RunningQueriesApi(ServletContext context) {
 		super(context);

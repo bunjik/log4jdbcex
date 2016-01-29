@@ -42,7 +42,7 @@ import info.bunji.jdbc.logger.JdbcLogger;
 import info.bunji.jdbc.logger.JdbcLoggerFactory;
 import net.arnx.jsonic.JSON;
 
-public abstract class AbstractApi extends HttpServlet {
+abstract class AbstractApi extends HttpServlet {
 
 	protected JdbcLogger logger = JdbcLoggerFactory.getLogger();
 
@@ -126,31 +126,39 @@ public abstract class AbstractApi extends HttpServlet {
 	}
 
 	/**
-	 * API名を取得する
-	 * @param req
-	 * @return
+	 * get API name
+	 * @param req the HttpServletRequest object that contains the request the client made of the servlet
+	 * @return API name
 	 */
 	protected String getApiName(HttpServletRequest req) {
 		return (String)req.getAttribute("API");
 	}
 
+	/**
+	 * get API path
+	 * @param req the HttpServletRequest object that contains the request the client made of the servlet
+	 * @return API path
+	 */
 	protected String getApiPath(HttpServletRequest req) {
 		return (String)req.getAttribute("API_PATH");
 	}
 
 	/**
-	 * 複数サーバのデータマージ後に呼び出される
+	 * Processing to be executed after the merge.
 	 *
-	 * マージ後のデータに加工が必要な場合に実装します。
-	 * デフォルトは何も行いません。
+	 * The default does nothing
 	 *
-	 * @param result
-	 * @return
+	 * @param result merged result
+	 * @return modified merged result
 	 */
 	protected Map<String, Object> postMergeProcess(Map<String, Object> result) {
 		return result;
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see javax.servlet.http.HttpServlet#service(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+	 */
 	@Override
 	protected void service(HttpServletRequest req, HttpServletResponse res)
 										throws ServletException, IOException {
@@ -294,12 +302,12 @@ public abstract class AbstractApi extends HttpServlet {
 
 	/**
 	 *
-	 * @param closeable
+	 * @param closable closable object
 	 */
-	protected void closeQuietly(Closeable closeable) {
-		if (closeable != null) {
+	void closeQuietly(Closeable closable) {
+		if (closable != null) {
 			try {
-				closeable.close();
+				closable.close();
 			} catch (Exception e) {}
 		}
 	}

@@ -10,15 +10,15 @@ public class QueryInfo implements Cloneable, Comparable<QueryInfo> {
 	private boolean isError = false;
 	private String errorMsg = null;
 
-	public QueryInfo() {
+	QueryInfo() {
 		// do nothing.
 	}
 
-	public QueryInfo(Long time, Long elapsed, String sql) {
+	QueryInfo(Long time, Long elapsed, String sql) {
 		this(time, elapsed, sql, (String) null);
 	}
 
-	public QueryInfo(Long time, Long elapsed, String sql, Throwable t) {
+	QueryInfo(Long time, Long elapsed, String sql, Throwable t) {
 		this(time, elapsed, sql);
 		if (t != null) {
 			this.isError = true;
@@ -26,7 +26,7 @@ public class QueryInfo implements Cloneable, Comparable<QueryInfo> {
 		}
 	}
 
-	public QueryInfo(Long time, Long elapsed, String sql, String queryId) {
+	QueryInfo(Long time, Long elapsed, String sql, String queryId) {
 		this.time = time;
 		this.elapsed = elapsed;
 		this.sql = sql;

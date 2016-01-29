@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 import info.bunji.jdbc.logger.JdbcLogger;
 
 /**
- * JDKのログAPIを利用する実装クラス
+ * logger implementation for java.util.logging.
  *
  * @author f.kinoshita
  */
@@ -34,34 +34,58 @@ public class JdkJdbcLogger extends AbstractJdbcLogger implements JdbcLogger {
 		super(url);
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#isJdbcLoggingEnabled()
+	 */
 	@Override
 	public boolean isJdbcLoggingEnabled() {
 
 		return debugLogger.isLoggable(Level.SEVERE);
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#trace(java.lang.String)
+	 */
 	@Override
 	public void trace(String msg) {
 		if (debugLogger.isLoggable(Level.FINEST))
 		debugLogger.finest(msg);
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#debug(java.lang.String, java.lang.Object[])
+	 */
 	@Override
 	public void debug(String msg, Object... args) {
 		if (debugLogger.isLoggable(Level.FINE))
 		debugLogger.fine(msg != null ? String.format(msg, args) : null);
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#info(java.lang.String)
+	 */
 	@Override
 	public void info(String msg) {
 		debugLogger.info(msg);
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#warn(java.lang.String)
+	 */
 	@Override
 	public void warn(String msg) {
 		debugLogger.warning(msg);
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#warn(java.lang.String, java.lang.Throwable)
+	 */
 	@Override
 	public void warn(String msg, Throwable t) {
 		LogRecord record = new LogRecord(Level.WARNING, msg);
@@ -70,11 +94,19 @@ public class JdkJdbcLogger extends AbstractJdbcLogger implements JdbcLogger {
 		debugLogger.log(record);
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#error(java.lang.String)
+	 */
 	@Override
 	public void error(String msg) {
 		debugLogger.severe(msg);
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#error(java.lang.String, java.lang.Throwable)
+	 */
 	@Override
 	public void error(String msg, Throwable t) {
 		LogRecord record = new LogRecord(Level.SEVERE, msg);

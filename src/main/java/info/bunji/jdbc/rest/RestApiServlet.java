@@ -53,12 +53,13 @@ public class RestApiServlet extends HttpServlet {
 
 		// データソース初期化のため、一旦コネクションを取得する
 		try {
+			String prefix = "java:comp/env/jdbc";
 			InitialContext ctx = new InitialContext();
-			NamingEnumeration<NameClassPair> ne = ctx.list("java:comp/env/jdbc");
+			NamingEnumeration<NameClassPair> ne = ctx.list(prefix);
 			while (ne.hasMoreElements()) {
 				NameClassPair nc = ne.nextElement();
 				context.log(nc.getName());
-				DataSource ds = (DataSource) ctx.lookup("java:comp/env/jdbc/" + nc.getName());
+				DataSource ds = (DataSource) ctx.lookup(prefix + "/" + nc.getName());
 				Connection conn = ds.getConnection();
 				if (conn != null) conn.close();
 			}

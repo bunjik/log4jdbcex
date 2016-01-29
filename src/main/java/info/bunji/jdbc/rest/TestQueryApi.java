@@ -39,7 +39,7 @@ import info.bunji.jdbc.logger.JdbcLoggerFactory;
 /**
  *
  */
-public class TestQueryApi extends AbstractApi {
+class TestQueryApi extends AbstractApi {
 
 	protected JdbcLogger logger = JdbcLoggerFactory.getLogger();
 

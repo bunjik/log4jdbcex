@@ -30,7 +30,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author f.kinoshita
  */
-public class ResourceApi extends AbstractApi {
+class ResourceApi extends AbstractApi {
 
 	/** 最終更新日(インスタンス生成時を固定で保持) */
 	private static final long LAST_MODIFIED = (System.currentTimeMillis() / 1000) * 1000;

@@ -28,50 +28,51 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import info.bunji.jdbc.LoggerHelper;
 import info.bunji.jdbc.logger.JdbcLogger;
+import info.bunji.jdbc.specifics.DefaultRdbmsSpecifics;
 import info.bunji.jdbc.specifics.OracleRdbmsSpecifics;
 import info.bunji.jdbc.specifics.RdbmsSpecifics;
 import info.bunji.jdbc.util.FormatUtils;
-import info.bunji.jdbc.util.LoggerHelper;
 
 public abstract class AbstractJdbcLogger implements JdbcLogger {
 
 	/** 実行中のStatementオブジェクトを保持する配列 */
-	protected List<LoggerHelper> activeStatements = Collections.synchronizedList(new ArrayList<LoggerHelper>());
+	List<LoggerHelper> activeStatements = Collections.synchronizedList(new ArrayList<LoggerHelper>());
 
-	protected long timeThreshold = 0L;
+	long timeThreshold = 0L;
 
 	/** ログの出力対象とするSQL文字列の正規表現(デフォルトは全てにマッチ) */
-	protected Pattern acceptPattern = null;
+	Pattern acceptPattern = null;
 
 	/** ログの出力対象外とするSQL文字列の正規表現(デフォルトはなし) */
-	protected Pattern ignorePattern = null;
+	Pattern ignorePattern = null;
 
 	/** REST API への出力時にSQLを整形するか */
-	protected boolean isFormat = true;
+	boolean isFormat = true;
 
 	/** ログ出力時の最大文字数(デフォルト:無制限[-1]) */
-	protected int limitLength = -1;
+	int limitLength = -1;
 
-	protected long lastUpdate = 0;
+	long lastUpdate = 0;
 
 	/** このLoggerインスタンスが出力対象とする接続URL */
-	protected String connectUrl;
+	String connectUrl;
 
 	/** 実行履歴の保持件数(接続URL単位) */
-	protected int historyCount = 50;
+	int historyCount = 50;
 
-	protected static final String RETURN_MSG_FORMAT = "[executed %,4d ms] %s";
+	private static final String RETURN_MSG_FORMAT = "[executed %,4d ms] %s";
 
-	protected static final String BATCH_MSG_FORMAT = "[executed (%d/%d)] %s";
+	private static final String BATCH_MSG_FORMAT = "[executed (%d/%d)] %s";
 
-	protected static final String BATCH_RESULT_FORMAT = "[batch finished %,4d ms] (%d/%d)";
+	private static final String BATCH_RESULT_FORMAT = "[batch finished %,4d ms] (%d/%d)";
 
-	protected static final String EXCEPTION_MSG_FORMAT = "[executed %,4d ms] %s";
+	private static final String EXCEPTION_MSG_FORMAT = "[executed %,4d ms] %s";
 
-	protected static final String RUNNING_MSG_FORMAT = "Running [elapsed %,4d ms] %s";
+	//private static final String RUNNING_MSG_FORMAT = "Running [elapsed %,4d ms] %s";
 
-	protected final RdbmsSpecifics specifics;
+	private final RdbmsSpecifics specifics;
 
 	private List<QueryInfo> queryHistory = new ArrayList<QueryInfo>() {
 		@Override
@@ -88,12 +89,11 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 
 	/**
 	 ********************************************
-	 * コンスタラクタ
 	 * <pre>
-	 * ロガーは接続URL単位にインスタンスされる想定であり、接続URL単位に
-	 * 出力設定を行える想定。
+	 * ロガーは接続URL単位にインスタンスされ、接続URL単位に
+	 * 出力設定を行うことが可能
 	 * </pre>
-	 * @param url 接続URL
+	 * @param url connection url
 	 ********************************************
 	 */
 	public AbstractJdbcLogger(String url) {
@@ -102,20 +102,22 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 		if (url.matches("^jdbc:oracle:")) {
 			specifics = new OracleRdbmsSpecifics();
 		} else {
-			specifics = new RdbmsSpecifics();
+			specifics = new DefaultRdbmsSpecifics();
 		}
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#getSpecifics()
+	 */
+	@Override
 	public final RdbmsSpecifics getSpecifics() {
 		return specifics;
 	}
 
-	/**
-	 ********************************************
-	 * このLoggerが出力対象とする接続URLを返す
-	 *
-	 * @return 接続URL
-	 ********************************************
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#getConnectUrl()
 	 */
 	@Override
 	public String getConnectUrl() {
@@ -123,17 +125,11 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	}
 
 	/**
-	 ********************************************
-	 * 出力の対象とするログの判定用正規表現の設定
-	 * <pre>
-	 * 比較対象はパラメータ展開後の文字列となるため、パラメータとして
-	 * 指定した文字列も対する指定も可能。
-	 * </pre>
-	 * @param ログ出力の対象とする文字列を検証する正規表現文字列
-	 ********************************************
+	 * set logging accept conditiion.
+	 *
+	 * @param regex accept filter regex string
 	 */
-	@Override
-	public void setAcceptFilter(String regex) {
+	private void setAcceptFilter(String regex) {
 		if (regex == null || regex.isEmpty()) {
 			this.acceptPattern = null;
 			//trace("Accept Filter:not defined.");
@@ -148,17 +144,11 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	}
 
 	/**
-	 ********************************************
-	 * 出力の対象とするログの判定用正規表現の設定
-	 * <pre>
-	 * 比較対象はパラメータ展開後の文字列となるため、パラメータとして
-	 * 指定した文字列も対する指定も可能。
-	 * </pre>
-	 * @param ログ出力の対象とする文字列を検証する正規表現文字列
-	 ********************************************
+	 * set logging ignore conditiion.
+	 *
+	 * @param regex ignore filter regex string
 	 */
-	@Override
-	public void setIgnoreFilter(String regex) {
+	private void setIgnoreFilter(String regex) {
 		if (regex == null || regex.isEmpty()) {
 			this.ignorePattern = null;
 			//trace("ignore Filter:not defined.");
@@ -173,42 +163,41 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	}
 
 	/**
-	 ********************************************
-	 * ロギング対象とするしきい値(ms)を設定する
-	 *
-	 * @param millis 出力を抑制するしきい値(ms)
-	 ********************************************
+	 * set logging thresthold time.
+	 * @param millis threshold milliseconds
 	 */
-	@Override
-	public void setTimeThreshold(long millis) {
+	private void setTimeThreshold(long millis) {
 		timeThreshold = Math.max(millis, 0);
 	}
 
 	/*
-	 * {@inheritDoc}
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#addExecStatement(info.bunji.jdbc.LoggerHelper)
 	 */
 	@Override
-	public void addExecStatement(LoggerHelper helper) {
-		activeStatements.add(helper);
+	public void addExecStatement(LoggerHelper statement) {
+		activeStatements.add(statement);
 	}
 
 	/*
-	 * {@inheritDoc}
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#removeExecStatement(info.bunji.jdbc.LoggerHelper)
 	 */
 	@Override
-	public void removeExecStatement(LoggerHelper helper) {
-		activeStatements.remove(helper);
+	public void removeExecStatement(LoggerHelper statement) {
+		activeStatements.remove(statement);
 	}
 
 	/**
 	 ********************************************
-	 * ログ出力対象とするかを判定する
-	 * @param sql 実行したSQL
-	 * @param elapsed 実行時間(ms)
-	 * @return 出力対象の場合はtrue、そうでない場合はfalseを返す
+	 * It is determined whether the log output target.
+	 *
+	 * @param sql execute sql
+	 * @param elapsed exec time(ms)
+	 * @return if output true, other false
 	 ********************************************
 	 */
-	protected boolean isLogging(String sql, long elapsed) {
+	boolean isLogging(String sql, long elapsed) {
 		if (timeThreshold <= elapsed || elapsed < 0) {
 			if (acceptPattern == null || acceptPattern.matcher(sql).find()) {
 				if (ignorePattern == null || !ignorePattern.matcher(sql).find()) {
@@ -219,6 +208,10 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 		return false;
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#reportReturned(info.bunji.jdbc.LoggerHelper, java.lang.Object[])
+	 */
 	@Override
 	public void reportReturned(LoggerHelper helper, Object... params) {
 		try {
@@ -260,7 +253,8 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	}
 
 	/*
-	 * {@inheritDoc}
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#reportException(info.bunji.jdbc.LoggerHelper, java.lang.Throwable, java.lang.Object[])
 	 */
 	@Override
 	public void reportException(LoggerHelper helper, Throwable t, Object... params) {
@@ -296,11 +290,9 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 		}
 	}
 
-	/**
-	 ********************************************
-	 * このLoggerに対する設定情報を取得する
-	 * @return
-	 ********************************************
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#getSetting()
 	 */
 	@Override
 	public Map<String,Object> getSetting() {
@@ -317,24 +309,9 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 		return statusMap;
 	}
 
-	/**
-	 ********************************************
-	 * このLoggerに対する設定情報を出力する
-	 ********************************************
-	 */
-	@Override
-	public void printSetting() {
-		info("[Setting] url= " + connectUrl);
-		info("[Setting] timeThreshold= " + timeThreshold);
-		info("[Setting] acceptFilter = " + (acceptPattern != null? acceptPattern.pattern(): ".*"));
-		info("[Setting] ignoreFilter = " + (ignorePattern != null? ignorePattern.pattern(): null));
-		info("[Setting] historyCount = " + historyCount);
-		info("[Setting] format       = " + isFormat);
-		info("[Setting] limitLength  = " + limitLength);
-	}
-
-	/**
-	 *
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#setSetting(java.util.Map)
 	 */
 	@Override
 	public boolean setSetting(Map<String,Object> settings) {
@@ -346,7 +323,8 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 			try {
 				if (key.equalsIgnoreCase("timeThreshold")) {
 					int val = Integer.valueOf(value.toString());
-					timeThreshold = (val >= 0 ? val : 0);
+					//timeThreshold = (val >= 0 ? val : 0);
+					setTimeThreshold(val);
 				} else if (key.equalsIgnoreCase("historyCount")) {
 					int val = Integer.valueOf(value.toString());
 					historyCount = (val >= 0 ? val : 0);
@@ -372,10 +350,9 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 		return true;
 	}
 
-	/**
-	 ********************************************
-	 *
-	 ********************************************
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#getRunningQueries()
 	 */
 	@Override
 	public Collection<QueryInfo> getRunningQueries() {
@@ -393,10 +370,9 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 		return activeQueries;
 	}
 
-	/**
-	 ********************************************
-	 * 検索履歴の取得
-	 ********************************************
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#getHistory()
 	 */
 	@Override
 	public Collection<QueryInfo> getHistory() {

@@ -32,22 +32,27 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import info.bunji.jdbc.util.LoggerHelper;
-
 /**
- *
+ * implements Statement Wrapper.
+ * <pre>
+ * wrapped for
+ * Statement
+ * PreparedStatement
+ * CallableStatement
+ * </pre>
  */
 public class StatementProxy extends LoggerHelper implements InvocationHandler {
 
 	/** 実際のインスタンス */
-	protected Statement _instance;
+	private Statement _instance;
 
 	/**  */
-	protected String _sql = null;
+	private String _sql = null;
 
 	/** ロギング対象のメソッド */
-	protected static final Set<String> loggingMethods = new HashSet<String>(
-			Arrays.asList("execute", "executeQuery", "executeUpdate",  "executeBatch"));
+	private static final Set<String> loggingMethods = new HashSet<String>(
+			Arrays.asList("execute", "executeQuery", "executeUpdate",  "executeBatch",
+							"executeLargeUpdate", "executeLargeBatch"));
 
 	private static final Map<String, Integer> paramTypes = new HashMap<String, Integer>() {{
 		// setArray(int parameterIndex, Array x)
@@ -133,7 +138,7 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 	private static Map<String, Map<String,Integer>> procedureInfo = new HashMap<String, Map<String,Integer>>();
 
 	/** プロシージャ名を抽出する正規表現 */
-	protected static final Pattern PROC_PATTERN = Pattern.compile("call (.*)\\(", Pattern.CASE_INSENSITIVE);
+	private static final Pattern PROC_PATTERN = Pattern.compile("call (.*)\\(", Pattern.CASE_INSENSITIVE);
 
 	/**
 	 *
@@ -145,24 +150,38 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 		_instance = instance;
 	}
 
+	/**
+	 *
+	 * @param instance
+	 * @param url
+	 * @param sql
+	 */
 	StatementProxy(Statement instance, String url, String sql) {
 		this(instance, url);
 		_sql = sql;
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
+	 */
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-		Object ret;
+		Object ret = null;
 		String name = method.getName();
 		if (loggingMethods.contains(name)) {
 			String sql = _sql;
 			if (args != null && args.length > 0) {
-				sql = args[0].toString();
+				sql = args[0] != null ? args[0].toString() : null;
 			}
 			try {
 				startExecute(sql);
 				ret = method.invoke(_instance, args);
-				logger.reportReturned(this);
+				if(name.endsWith("Batch")) {
+					reportBatchReturned();
+				} else {
+					reportReturned();
+				}
 			} catch(InvocationTargetException e) {
 				reportException(e.getCause(), sql);
 				throw e.getCause();
@@ -206,8 +225,6 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 				} else {
 					addParameter((Integer)args[0], type, value);
 				}
-			} else if (name.equals("clearParameters")) {
-				clearParameterList();
 			}
 		}
 		return ret;

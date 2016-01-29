@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package info.bunji.jdbc.util;
+package info.bunji.jdbc;
 
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -28,18 +27,18 @@ import info.bunji.jdbc.specifics.RdbmsSpecifics;
 
 /**
  *
- * @author f.kinoshita
+ * @author Fumiharu Kinoshita
  */
 public abstract class LoggerHelper {
 
-	/** このインスタンスが利用するLogger */
-	protected JdbcLogger logger;
-
-	/** 接続URL */
+	/** connection url */
 	protected String url;
 
+	/** このインスタンスが利用するLogger */
+	private JdbcLogger logger;
+
 	/** クエリの実行開始時間 */
-	protected long _startTime = 0L;
+	private long _startTime = 0L;
 
 	/** クエリを一意に得意するためのキー */
 	private String _queryId;
@@ -58,7 +57,12 @@ public abstract class LoggerHelper {
 	/** パラメータ置換用の正規表現 */
 	private static final Pattern PARAM_REGEX = Pattern.compile("\\?");
 
-	protected LoggerHelper(String url) {
+	/**
+	 ********************************************
+	 * @param url execute sql (for PreparedStatement or CallableStatement)
+	 ********************************************
+	 */
+	LoggerHelper(String url) {
 		this.url = url;
 		logger = JdbcLoggerFactory.getLogger(url);
 	}
@@ -68,9 +72,11 @@ public abstract class LoggerHelper {
 	 * クエリの開始時に呼び出すメソッド.
 	 *
 	 * 実行中クエリのキューに自身を登録するとともに、開始時間を記録する
+	 *
+	 * @param sql execute sql
 	 ********************************************
 	 */
-	protected void startExecute(String sql) {
+	void startExecute(String sql) {
 		setSql(sql);
 		startExecute();
 	}
@@ -82,7 +88,7 @@ public abstract class LoggerHelper {
 	 * 実行中クエリのキューに自身を登録するとともに、開始時間を記録する
 	 ********************************************
 	 */
-	protected void startExecute() {
+	void startExecute() {
 		_queryId = UUID.randomUUID().toString();
 		_startTime = System.currentTimeMillis();
 		logger.addExecStatement(this);
@@ -96,7 +102,7 @@ public abstract class LoggerHelper {
 	 * ※finally節などで呼び出しを担保すること
 	 ********************************************
 	 */
-	protected void endExecute() {
+	void endExecute() {
 		logger.removeExecStatement(this);
 	}
 
@@ -106,7 +112,7 @@ public abstract class LoggerHelper {
 	 * @param args addBatchメソッドの引数配列(最大１)
 	 ********************************************
 	 */
-	protected void addBatchList(Object... args) {
+	void addBatchList(Object... args) {
 		// SQL文字列を追加する
 		if (_batchList == null) _batchList = new ArrayList<String>();
 		if (args == null || args.length == 0) {
@@ -117,14 +123,14 @@ public abstract class LoggerHelper {
 		}
 	}
 
-	protected void clearBatchList() {
+	void clearBatchList() {
 		_batchList = null;
 	}
 
-	protected void clearParameterList() {
+	void clearParameterList() {
 		_paramList.clear();
 	}
-
+/*
 	public Object reportResult(Object execResult) {
 		logger.reportReturned(this);
 		return execResult;
@@ -144,6 +150,10 @@ public abstract class LoggerHelper {
 		logger.reportReturned(this);
 		return execResult;
 	}
+*/
+	void reportReturned() {
+		logger.reportReturned(this);
+	}
 
 	/**
 	 ********************************************
@@ -152,18 +162,19 @@ public abstract class LoggerHelper {
 	 * @return
 	 ********************************************
 	 */
-	int[] reportReturned(int[] execResult) {
+//	int[] reportReturned(int[] execResult) {
+	void reportBatchReturned() {
 		try {
 			isExecuteBatch = true;
 			logger.reportReturned(this);
-			return execResult;
+//			return execResult;
 		} finally {
 			isExecuteBatch = false;
 			clearBatchList();
 		}
 	}
 
-	protected void reportException(Throwable t, Object... params) {
+	void reportException(Throwable t, Object... params) {
 		logger.reportException(this, t, params);
 	}
 
@@ -178,14 +189,25 @@ public abstract class LoggerHelper {
 		return _execSql;
 	}
 
-	protected String getSql() {
+	String getSql() {
 		return _execSql;
 	}
 
+	/**
+	 * get execute start time.
+	 * @return start time
+	 */
 	public long getStartTime() {
 		return _startTime;
 	}
 
+	/**
+	 * get execute sql.
+	 *
+	 * if parameterized sql, embed parameters.
+	 *
+	 * @return sql
+	 */
 	public String dumpSql() {
 		try {
 			RdbmsSpecifics spec = logger.getSpecifics();
@@ -215,13 +237,13 @@ public abstract class LoggerHelper {
 		}
 	}
 
-	public void addParameter(int index, int type, Object value) {
+	void addParameter(int index, int type, Object value) {
 		// 必要に応じて領域を確保
 		while (index > _paramList.size()) _paramList.add(null);
 		_paramList.set(index - 1, ParameterInfo.create(type, value));
 	}
 
-	public void addParameter(String name, int type, Object value) {
+	void addParameter(String name, int type, Object value) {
 		// TODO:2回同じパラメータを指定された場合は未考慮
 		// TODO:indexとnameが混在して指定された場合も未考慮
 		_paramList.add(ParameterInfo.create(type, name, value));
@@ -246,18 +268,26 @@ public abstract class LoggerHelper {
 		return buf.substring(2);
 	}
 
-	void dumpParameters() {
-		logger.debug("[" + getParameters() + "]");
-	}
+//	JdbcLogger getLogger() {
+//		return logger;
+//	}
 
-	public JdbcLogger getLogger() {
-		return logger;
-	}
-
+	/**
+	 * get uniqu queryid.
+	 *
+	 * @return queryId
+	 */
 	public String getQueryId() {
 		return _queryId;
 	}
 
+	/**
+	 * get batch sql list.
+	 *
+	 * if parameterized sql, embed parameters.
+	 *
+	 * @return batch sql list
+	 */
 	public List<String> getBatchList() {
 		return _batchList;
 	}

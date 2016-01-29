@@ -15,12 +15,6 @@
  */
 package info.bunji.jdbc.logger;
 
-import info.bunji.jdbc.DriverEx;
-import info.bunji.jdbc.logger.impl.CommonsLoggingJdbcLogger;
-import info.bunji.jdbc.logger.impl.JdkJdbcLogger;
-import info.bunji.jdbc.logger.impl.Log4jJdbcLogger;
-import info.bunji.jdbc.logger.impl.Slf4jJdbcLogger;
-
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -36,12 +30,25 @@ import javax.naming.NameClassPair;
 import javax.naming.NamingEnumeration;
 import javax.sql.DataSource;
 
+import info.bunji.jdbc.DriverEx;
+import info.bunji.jdbc.logger.impl.CommonsLoggingJdbcLogger;
+import info.bunji.jdbc.logger.impl.JdkJdbcLogger;
+import info.bunji.jdbc.logger.impl.Log4jJdbcLogger;
+import info.bunji.jdbc.logger.impl.Slf4jJdbcLogger;
 import net.arnx.jsonic.JSON;
 
 /**
+ * logger factory.
+ * <pre>
+ * find a log implementation from class path.
+ *
+ * Search priority
+ *  1. slf4j
+ *  2. commons-logging
+ *  3. log4j
+ *  4. java.util.logging
  *
  * 設定ファイルの形式
- *
  * {
  *  "_default_": {
  *		"timeThreshold": 0,
@@ -60,7 +67,7 @@ import net.arnx.jsonic.JSON;
  *		"format": true
  *	}
  * }
- *
+ * </pre>
  * @author f.kinoshita
  */
 public class JdbcLoggerFactory {
@@ -95,7 +102,6 @@ public class JdbcLoggerFactory {
 				// 見つかったらそのクラスを利用する
 				Class.forName(entry.getKey());
 				constructor = entry.getValue().getConstructor(String.class);
-				//System.out.println("binding logger(" + entry.getKey() + ")");
 				break;
 			} catch (Exception e) {}
 		}
@@ -146,7 +152,7 @@ public class JdbcLoggerFactory {
 
 	/**
 	 ********************************************
-	 * コンストラクタ
+	 * private constructor.
 	 ********************************************
 	 */
 	private JdbcLoggerFactory() {
@@ -155,10 +161,10 @@ public class JdbcLoggerFactory {
 
 	/**
 	 ********************************************
-	 * 指定されたURLのロガー名(可能ならDataSource名)を取得する
-	 * 取得できない場合は、URLをそのまま返す
-	 * @param url 接続URL
-	 * @return JNDIのデータソース名が取得できない場合はURLをそのまま返す
+	 * get loggerName from jdbc url.
+	 *
+	 * @param url connection url
+	 * @return loggerName(jdbc url or DataSourceName)
 	 ********************************************
 	 */
 	private static String getLoggerName(String url) {
@@ -168,9 +174,10 @@ public class JdbcLoggerFactory {
 
 	/**
 	 ********************************************
-	 * 接続URLに応じたロガーを取得する.
+	 * get logger from jdbc url.
 	 *
-	 * この実装では、接続ユーザによる区別は想定していません
+	 * @param url connection url
+	 * @return logger
 	 ********************************************
 	 */
 	public static JdbcLogger getLogger(String url) {
@@ -200,15 +207,15 @@ public class JdbcLoggerFactory {
 	 * @return 保持している場合はtrue，保持していない場合はfalseを返す
 	 ********************************************
 	 */
-	public static boolean hasLogger(String url) {
+	private static boolean hasLogger(String url) {
 		return loggerCache.containsKey(getLoggerName(url));
 	}
 
 	/**
 	 ********************************************
-	 * デフォルトのロガーを取得する.
+	 * get default logger.
 	 *
-	 * @return デフォルトのロガー（接続URLとは紐付かない）
+	 * @return default logger
 	 ********************************************
 	 */
 	public static JdbcLogger getLogger() {
@@ -217,10 +224,9 @@ public class JdbcLoggerFactory {
 
 	/**
 	 ********************************************
-	 * 現在保持しているLoggerの一覧を取得する。
-	 * ただし、デフォルトのLoggerは除外する。
+	 * get enable logger list(exclude default logger).
 	 *
-	 * @return 有効なLoggerの一覧
+	 * @return logger list
 	 ********************************************
 	 */
 	public static List<JdbcLogger> getLoggers() {
@@ -235,12 +241,13 @@ public class JdbcLoggerFactory {
 
 	/**
 	 ********************************************
-	 * 接続URLに応じた設定情報を取得する
-	 * @param name
-	 * @return
+	 * get logger setting.
+	 *
+	 * @param loggerName loggerName
+	 * @return setting map
 	 ********************************************
 	 */
-	public static Map<String,Object> getSetting(String name) {
-		return settingMap.get(name);
+	public static Map<String,Object> getSetting(String loggerName) {
+		return settingMap.get(loggerName);
 	}
 }

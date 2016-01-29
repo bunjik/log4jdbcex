@@ -18,84 +18,153 @@ package info.bunji.jdbc.logger;
 import java.util.Collection;
 import java.util.Map;
 
+import info.bunji.jdbc.LoggerHelper;
 import info.bunji.jdbc.logger.impl.QueryInfo;
 import info.bunji.jdbc.specifics.RdbmsSpecifics;
-import info.bunji.jdbc.util.LoggerHelper;
 
 /**
+ * All logger interface.
  *
  * @author f.kinoshita
  */
 public interface JdbcLogger {
-	/** ロガー名 */
+
+	/** loggerName */
 	public static final String LOGGER_NAME = "jdbclog";
 
 	public RdbmsSpecifics getSpecifics();
 
+	/**
+	 * get connection url.
+	 *
+	 * @return jdbc url
+	 */
 	public String getConnectUrl();
 
+	/**
+	 *
+	 * @return if logging enabled true, other false
+	 */
 	public boolean isJdbcLoggingEnabled();
 
-	public void setAcceptFilter(String regex);
+	/**
+	 * set logging accept conditiion.
+	 *
+	 * @param regex accept filter regex string
+	 */
+//	public void setAcceptFilter(String regex);
 
-	public void setIgnoreFilter(String regex);
+	/**
+	 * set logging ignore conditiion.
+	 *
+	 * @param regex ignore filter regex string
+	 */
+//	public void setIgnoreFilter(String regex);
 
-	public void setTimeThreshold(long millis);
+	/**
+	 * set logging thresthold time.
+	 * @param millis threshold milliseconds
+	 */
+//	public void setTimeThreshold(long millis);
 
+	/**
+	 * output trace log.
+	 * @param msg log message
+	 */
 	public void trace(String msg);
 
+	/**
+	 * output debug log.
+	 * @param msg log message
+	 * @param args message parameters
+	 */
 	public void debug(String msg, Object... args);
 
+	/**
+	 * output info log.
+	 * @param msg log message
+	 */
 	public void info(String msg);
 
+	/**
+	 * output warn log.
+	 * @param msg log message
+	 */
 	public void warn(String msg);
 
+	/**
+	 * output warn log.
+	 * @param msg log message
+	 * @param t throwable
+	 */
 	public void warn(String msg, Throwable t);
 
+	/**
+	 * output error log.
+	 * @param msg log message
+	 */
 	public void error(String msg);
 
+	/**
+	 * output error log.
+	 * @param msg log message
+	 * @param t throwable
+	 */
 	public void error(String msg, Throwable t);
 
+	/**
+	 *
+	 * @param helper
+	 * @param params
+	 */
 	public void reportReturned(LoggerHelper helper, Object... params);
 
+	/**
+	 *
+	 * @param helper
+	 * @param t throwable
+	 * @param params
+	 */
 	public void reportException(LoggerHelper helper, Throwable t, Object... params);
 
 	/**
-	 * 実行中のオブジェクトを追加する
-	 * @param helper
+	 * add execute statement.
+	 *
+	 * @param statement target statement
 	 */
-	public void addExecStatement(LoggerHelper helper);
+	public void addExecStatement(LoggerHelper statement);
 
 	/**
-	 * 実行中のオブジェクトを削除する
-	 * @param helper
+	 * remove execute statment.
+	 *
+	 * @param statement target statement
 	 */
-	public void removeExecStatement(LoggerHelper helper);
+	public void removeExecStatement(LoggerHelper statement);
 
 	/**
-	 * このロガーの設定情報を取得する
+	 * get setting map.
+	 *
 	 * @return 設定情報
 	 */
 	public Map<String,Object> getSetting();
 
 	/**
-	 * このロガーに設定情報を設定する
-	 * @return 設定情報
+	 * set setting map.
+	 *
+	 * @param settings
+	 * @return if successed true, other false
 	 */
 	public boolean setSetting(Map<String,Object> settings);
 
 	/**
-	 * このロガーの設定情報をログ(INFO)に出力する
-	 */
-	public void printSetting();
-
-	/**
-	 * 現在実行中のクエリのリストを取得する
+	 * get executing sql info list.
+	 * @return query list
 	 */
 	public Collection<QueryInfo> getRunningQueries();
 
 	/**
-	 * 実行済のクエリのリストを取得する
+	 * get executed sql info list.
+	 * @return query list
 	 */
 	public Collection<QueryInfo> getHistory();
 }

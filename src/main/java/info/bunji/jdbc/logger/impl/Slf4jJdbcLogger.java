@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import info.bunji.jdbc.logger.JdbcLogger;
 
 /**
- * SLF4JのログAPIを利用する実装クラス
+ * logger implementation for slf4j
  *
  * @author f.kinoshia
  */
@@ -33,43 +33,75 @@ public class Slf4jJdbcLogger extends AbstractJdbcLogger implements JdbcLogger {
 		super(url);
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#isJdbcLoggingEnabled()
+	 */
 	@Override
 	public boolean isJdbcLoggingEnabled() {
 		return debugLogger.isErrorEnabled();
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#trace(java.lang.String)
+	 */
 	@Override
 	public void trace(String msg) {
 		if (debugLogger.isTraceEnabled())
 		debugLogger.trace(msg);
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#debug(java.lang.String, java.lang.Object[])
+	 */
 	@Override
 	public void debug(String msg, Object... args) {
 		if (debugLogger.isDebugEnabled())
 		debugLogger.debug(msg != null ? String.format(msg, args) : null);
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#info(java.lang.String)
+	 */
 	@Override
 	public void info(String msg) {
 		debugLogger.info(msg);
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#warn(java.lang.String)
+	 */
 	@Override
 	public void warn(String msg) {
 		debugLogger.warn(msg);
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#warn(java.lang.String, java.lang.Throwable)
+	 */
 	@Override
 	public void warn(String msg, Throwable t) {
 		debugLogger.warn(msg, t);
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#error(java.lang.String)
+	 */
 	@Override
 	public void error(String msg) {
 		debugLogger.error(msg);
 	}
 
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#error(java.lang.String, java.lang.Throwable)
+	 */
 	@Override
 	public void error(String msg, Throwable t) {
 		debugLogger.error(msg, t);
