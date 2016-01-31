@@ -15,16 +15,19 @@
  */
 package info.bunji.jdbc;
 
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 
 import info.bunji.jdbc.logger.JdbcLogger;
 import info.bunji.jdbc.logger.JdbcLoggerFactory;
@@ -233,8 +236,13 @@ public class DriverEx implements Driver {
 		return realDriver != null && realDriver.jdbcCompliant();
 	}
 
-//	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-//		return realDriver.getParentLogger();
-//		return null;
-//	}
+	//@Override
+	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+		try {
+			Method method = realDriver.getClass().getMethod("getParentLogger");
+			return (Logger) method.invoke(realDriver);
+		} catch (Exception e) {
+			throw new SQLFeatureNotSupportedException();
+		}
+	}
 }

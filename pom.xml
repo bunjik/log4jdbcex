@@ -8,6 +8,12 @@
     <description>A jdbc logging driver</description>
     <url>http://bunjik.github.io/log4jdbcex</url>
 
+    <properties>
+        <java-version>1.7</java-version>
+        <maven.compiler.source>1.7</maven.compiler.source>
+        <maven.compiler.target>1.7</maven.compiler.target>
+	</properties>
+
 	<licenses>
 		<license>
 			<name>Apache License 2.0</name>
@@ -39,6 +45,17 @@
 			<timezone>+9</timezone>
 		</developer>
 	</developers>
+
+	<distributionManagement>
+		<snapshotRepository>
+		    <id>ossrh</id>
+		    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+		</snapshotRepository>
+		<repository>
+		    <id>ossrh</id>
+		    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+		</repository>
+	</distributionManagement>
 
 	<repositories>
 		<repository>
@@ -107,14 +124,6 @@
 			<version>1.4.190</version>
   			<scope>test</scope>
 		</dependency>
-<!--
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-simple</artifactId>
-			<version>1.7.12</version>
-  			<scope>test</scope>
-		</dependency>
--->
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
@@ -122,41 +131,8 @@
   			<scope>test</scope>
 		</dependency>
 	</dependencies>
-<!--
-	<profiles>
-		<profile>
-			<id>release-sign-artifacts</id>
-			<activation>
-				<property>
-					<name>performRelease</name>
-					<value>true</value>
-				</property>
-			</activation>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.6</version>
-						<executions>
-							<execution>
-								<id>sign-artifacts</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>sign</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
--->
 
 	<build>
-		<defaultGoal>install</defaultGoal>
-
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -166,7 +142,24 @@
 					<source>1.6</source>
 					<target>1.6</target>
 					<encoding>UTF-8</encoding>
+					<compilerVersion>1.6</compilerVersion>
 				</configuration>
+			</plugin>
+
+			<!-- generate PGP Signature -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>1.5</version>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 
 			<plugin>
@@ -188,14 +181,8 @@
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>2.10.3</version>
 				<configuration>
-<!--
-					<splitindex>true</splitindex>
-					<docfilessubdirs>true</docfilessubdirs>
-					<header>${project.name}</header>
--->
-
 					<author>true</author>
-					<source>1.6</source>
+					<source>1.7</source>
 					<show>protected</show>
 					<encoding>UTF-8</encoding>
 					<charset>UTF-8</charset>
@@ -254,6 +241,19 @@
 					</execution>
 				</executions>
 			</plugin>
+
+			<plugin>
+				<groupId>org.sonatype.plugins</groupId>
+				<artifactId>nexus-staging-maven-plugin</artifactId>
+				<version>1.6.3</version>
+				<extensions>true</extensions>
+				<configuration>
+					<serverId>ossrh</serverId>
+					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
+					<autoReleaseAfterClose>true</autoReleaseAfterClose>
+				</configuration>
+			</plugin>
+
 		</plugins>
 	</build>
 
