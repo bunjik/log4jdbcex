@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Fumiharu Kinoshita
+ * Copyright 2016 Fumiharu Kinoshita
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import info.bunji.jdbc.specifics.RdbmsSpecifics;
 
 /**
  *
- * @author Fumiharu Kinoshita
+ * @author f.Kinoshita
  */
 public abstract class LoggerHelper {
 
@@ -227,24 +227,24 @@ public abstract class LoggerHelper {
 		_paramList.add(ParameterInfo.create(type, name, value));
 	}
 
-	String getParameters() {
-		StringBuilder buf = new StringBuilder();
-		if (_paramList == null | _paramList.isEmpty()) {
-			return "";
-		}
-		for (ParameterInfo p : _paramList) {
-			buf.append(", ");
-			if (p == null) {
-				buf.append("NULL");
-			} else {
-				if (p.getName() != null) {
-					buf.append(p.getName()).append("=");
-				}
-				buf.append(p.getValue());
-			}
-		}
-		return buf.substring(2);
-	}
+//	String getParameters() {
+//		StringBuilder buf = new StringBuilder();
+//		if (_paramList == null | _paramList.isEmpty()) {
+//			return "";
+//		}
+//		for (ParameterInfo p : _paramList) {
+//			buf.append(", ");
+//			if (p == null) {
+//				buf.append("NULL");
+//			} else {
+//				if (p.getName() != null) {
+//					buf.append(p.getName()).append("=");
+//				}
+//				buf.append(p.getValue());
+//			}
+//		}
+//		return buf.substring(2);
+//	}
 
 //	JdbcLogger getLogger() {
 //		return logger;

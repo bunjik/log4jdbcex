@@ -2,16 +2,16 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>info.bunji</groupId>
 	<artifactId>log4jdbcex</artifactId>
-	<version>0.1</version>
+	<version>0.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>log4jdbcex</name>
-    <description>A jdbc logging driver</description>
-    <url>http://bunjik.github.io/log4jdbcex</url>
+	<description>A jdbc logging driver</description>
+	<url>http://bunjik.github.io/log4jdbcex</url>
 
-    <properties>
-        <java-version>1.7</java-version>
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
+	<properties>
+		<java-version>1.6</java-version>
+		<maven.compiler.source>1.6</maven.compiler.source>
+		<maven.compiler.target>1.6</maven.compiler.target>
 	</properties>
 
 	<licenses>
@@ -19,16 +19,12 @@
 			<name>Apache License 2.0</name>
 			<url>http://www.apache.org/licenses/LICENSE-2.0</url>
 		</license>
-		<license>
-			<name>GNU General Public License (GPL)</name>
-			<url>http://www.gnu.org/licenses/gpl.txt</url>
-		</license>
 	</licenses>
 
 	<scm>
-		<url>https://github.com/bunjik/log4jdbcex</url>
 		<connection>scm:git:git@github.com:bunjik/log4jdbcex.git</connection>
 		<developerConnection>scm:git:git@github.com:bunjik/log4jdbcex.git</developerConnection>
+		<url>git@github.com:bunjik/log4jdbcex.git</url>
 	</scm>
 
 	<developers>
@@ -36,7 +32,7 @@
 			<id>bunjik</id>
 			<name>Fumiharu Kinoshita</name>
 			<email>kinoshita@bunji.info</email>
-			<url>http://bunjik.github.io/</url>
+			<url>https://github.com/bunjik/log4jdbcex</url>
 			<roles>
 				<role>lead</role>
 				<role>architect</role>
@@ -57,27 +53,25 @@
 		</repository>
 	</distributionManagement>
 
-	<repositories>
-		<repository>
-			<id>ProjectRepo</id>
-			<releases>
-				<enabled>true</enabled>
-				<checksumPolicy>ignore</checksumPolicy>
-			</releases>
-  			<url>file://${project.basedir}/lib</url>
-		</repository>
-	</repositories>
-
 	<dependencies>
 		<dependency>
 			<groupId>net.arnx</groupId>
 			<artifactId>jsonic</artifactId>
 			<version>1.3.10</version>
 		</dependency>
+
+		<!-- for sql formatter -->
 		<dependency>
-			<groupId>blanco</groupId>
-			<artifactId>blancosqlformatter</artifactId>
-			<version>0.1.0</version>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-core</artifactId>
+			<version>5.1.0.Final</version>
+			<optional>true</optional>
+			<exclusions>
+				<exclusion>
+					<groupId>*</groupId>
+					<artifactId>*</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -107,15 +101,15 @@
 
 		<!-- for Test -->
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.12</version>
-  			<scope>test</scope>
-		</dependency>
-		<dependency>
 			<groupId>org.hamcrest</groupId>
 			<artifactId>hamcrest-all</artifactId>
 			<version>1.3</version>
+  			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
   			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -129,6 +123,38 @@
 			<artifactId>logback-classic</artifactId>
 			<version>1.1.3</version>
   			<scope>test</scope>
+		</dependency>
+
+		<!-- for rest api test -->
+		<dependency>
+			<groupId>org.httpunit</groupId>
+			<artifactId>httpunit</artifactId>
+			<version>1.7.2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>tomcat</groupId>
+			<artifactId>naming-factory</artifactId>
+			<version>5.5.23</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>tomcat</groupId>
+			<artifactId>naming-resources</artifactId>
+			<version>5.5.23</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>tomcat</groupId>
+			<artifactId>naming-java</artifactId>
+			<version>5.0.28</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>commons-dbcp</groupId>
+			<artifactId>commons-dbcp</artifactId>
+			<version>1.4</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
@@ -241,6 +267,33 @@
 					</execution>
 				</executions>
 			</plugin>
+
+			<plugin>
+				<artifactId>maven-site-plugin</artifactId>
+				<configuration>
+				    <reportPlugins>
+						<plugin>
+							<groupId>org.codehaus.mojo</groupId>
+							<artifactId>findbugs-maven-plugin</artifactId>
+							<version>3.0.3</version>
+							<configuration>
+								<effort>Max</effort>
+								<findbugsXmlOutput>true</findbugsXmlOutput>
+								<xmlOutput>true</xmlOutput>
+							</configuration>
+<!--
+						    <configuration>
+						        <effort>Default</effort>
+								<threshold>Default</threshold>
+								<xmlOutput>true</xmlOutput>
+								<xmlOutputDirectory>target/site</xmlOutputDirectory>
+								<excludeFilterFile>findbugs-exclude.xml</excludeFilterFile>
+						    </configuration>
+-->
+						</plugin>
+				    </reportPlugins>
+				</configuration>
+		    </plugin>
 
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>

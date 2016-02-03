@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Fumiharu Kinoshita
+ * Copyright 2016 Fumiharu Kinoshita
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,12 @@ import info.bunji.jdbc.logger.JdbcLogger;
 import info.bunji.jdbc.logger.JdbcLoggerFactory;
 import net.arnx.jsonic.JSON;
 
-abstract class AbstractApi extends HttpServlet {
+/**
+ *
+ * @author f.kinoshita
+ *
+ */
+abstract class AbstractApi extends HttpServlet implements RestApi {
 
 	protected JdbcLogger logger = JdbcLoggerFactory.getLogger();
 
@@ -60,78 +65,6 @@ abstract class AbstractApi extends HttpServlet {
 			e.printStackTrace();
 		}
 		hostName = (ia != null ? ia.getHostName() : "unknownHost");
-	}
-
-	/* (非 Javadoc)
-	 * @see javax.servlet.http.HttpServlet#doDelete(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
-	 */
-	@Override
-	protected void doDelete(HttpServletRequest req, HttpServletResponse res)
-			throws ServletException, IOException {
-		res.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-	}
-
-	/* (非 Javadoc)
-	 * @see javax.servlet.http.HttpServlet#doGet(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
-	 */
-	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse res)
-			throws ServletException, IOException {
-		res.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-	}
-
-	/* (非 Javadoc)
-	 * @see javax.servlet.http.HttpServlet#doHead(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
-	 */
-	@Override
-	protected void doHead(HttpServletRequest req, HttpServletResponse res)
-			throws ServletException, IOException {
-		res.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-	}
-
-	/* (非 Javadoc)
-	 * @see javax.servlet.http.HttpServlet#doOptions(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
-	 */
-	@Override
-	protected void doOptions(HttpServletRequest req, HttpServletResponse res)
-			throws ServletException, IOException {
-		res.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-	}
-
-	/* (非 Javadoc)
-	 * @see javax.servlet.http.HttpServlet#doPost(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
-	 */
-	@Override
-	protected void doPost(HttpServletRequest req, HttpServletResponse res)
-			throws ServletException, IOException {
-		res.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-	}
-
-	/* (非 Javadoc)
-	 * @see javax.servlet.http.HttpServlet#doPut(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
-	 */
-	@Override
-	protected void doPut(HttpServletRequest req, HttpServletResponse res)
-			throws ServletException, IOException {
-		res.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-	}
-
-	/* (非 Javadoc)
-	 * @see javax.servlet.http.HttpServlet#doTrace(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
-	 */
-	@Override
-	protected void doTrace(HttpServletRequest req, HttpServletResponse res)
-			throws ServletException, IOException {
-		res.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-	}
-
-	/**
-	 * get API name
-	 * @param req the HttpServletRequest object that contains the request the client made of the servlet
-	 * @return API name
-	 */
-	protected String getApiName(HttpServletRequest req) {
-		return (String)req.getAttribute("API");
 	}
 
 	/**
@@ -175,6 +108,15 @@ abstract class AbstractApi extends HttpServlet {
 		} else {
 			super.service(req, res);
 		}
+	}
+
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.rest.RestApi#destory()
+	 */
+	@Override
+	public void destroy() {
+		super.destroy();
 	}
 
 	/**
@@ -296,7 +238,7 @@ abstract class AbstractApi extends HttpServlet {
 		} finally {
 			closeQuietly(os);
 			closeQuietly(is);
-			conn.disconnect();
+			if (conn != null) conn.disconnect();
 		}
 	}
 

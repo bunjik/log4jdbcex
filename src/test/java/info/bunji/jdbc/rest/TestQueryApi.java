@@ -47,8 +47,21 @@ class TestQueryApi extends AbstractApi {
 
 	List<Connection> connList = new ArrayList<Connection>();
 
+	public TestQueryApi() {
+		this(null);
+	}
+
 	public TestQueryApi(ServletContext context) {
 		super(context);
+	}
+
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.rest.RestApi#getApiName()
+	 */
+	@Override
+	public String getApiName() {
+		return "test";
 	}
 
 	@Override

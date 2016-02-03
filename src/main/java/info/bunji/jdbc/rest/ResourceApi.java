@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Fumiharu Kinoshita
+ * Copyright 2016 Fumiharu Kinoshita
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,15 @@ class ResourceApi extends AbstractApi {
 		super(context);
 		resourceBase = getClass().getPackage().getName().replace(".", "/") + "/";
 		logger.trace(resourceBase);
+	}
+
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.rest.RestApi#getApiName()
+	 */
+	@Override
+	public String getApiName() {
+		return "ui";
 	}
 
 	/* (非 Javadoc)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Fumiharu Kinoshita
+ * Copyright 2016 Fumiharu Kinoshita
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,21 @@ import net.arnx.jsonic.JSON;
 
 /**
  *
+ * @author f.kinoshita
  */
 class SettingApi extends AbstractApi {
 
 	public SettingApi(ServletContext context) {
 		super(context);
+	}
+
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.rest.RestApi#getApiName()
+	 */
+	@Override
+	public String getApiName() {
+		return "setting";
 	}
 
 	@Override
@@ -54,7 +64,7 @@ class SettingApi extends AbstractApi {
 			//}
 			//res.setDateHeader("Last-modified", lastUpdate);
 
-			// 整形して出力
+			// format strings
 			JSON.encode(settings, bos, true);
 
 			res.setStatus(HttpServletResponse.SC_OK);

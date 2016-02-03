@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Fumiharu Kinoshita
+ * Copyright 2016 Fumiharu Kinoshita
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,15 @@
 package info.bunji.jdbc.rest;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.InitialContext;
@@ -34,11 +38,17 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
+import info.bunji.jdbc.util.ClassScanUtil;
+
+/**
+ *
+ * @author f.kinoshita
+ */
 @WebServlet(name="RestApiServlet",urlPatterns={"/log4jdbcex"})
 public class RestApiServlet extends HttpServlet {
 
 	/** 呼び出し可能なAPIクラスのマッピング */
-	private Map<String, AbstractApi> apiMap = new LinkedHashMap<String, AbstractApi>();
+	private Map<String, RestApi> apiMap = new LinkedHashMap<String, RestApi>();
 
 	/*
 	 * (非 Javadoc)
@@ -58,7 +68,7 @@ public class RestApiServlet extends HttpServlet {
 			NamingEnumeration<NameClassPair> ne = ctx.list(prefix);
 			while (ne.hasMoreElements()) {
 				NameClassPair nc = ne.nextElement();
-				context.log(nc.getName());
+				//context.log(nc.getName());
 				DataSource ds = (DataSource) ctx.lookup(prefix + "/" + nc.getName());
 				Connection conn = ds.getConnection();
 				if (conn != null) conn.close();
@@ -67,17 +77,23 @@ public class RestApiServlet extends HttpServlet {
 			e.printStackTrace();
 		}
 
-		apiMap.put("ui", new ResourceApi(context));
-		apiMap.put("setting", new SettingApi(context));
-		apiMap.put("history", new HistoryApi(context));
-		apiMap.put("running", new RunningQueriesApi(context));
+		try {
+			List<Class<?>> classes = ClassScanUtil.findClassesFromPackage(getClass().getPackage().getName());
 
-		// for Test
-		//apiMap.put("test", new TestQueryApi(context));
-
-		// 明示的にinit() を呼び出す
-		for (AbstractApi api : apiMap.values()) {
-			api.init();
+			Iterator<Class<?>> it = classes.iterator();
+			while (it.hasNext()) {
+				Class<?> clazz = it.next();
+				if (!Modifier.isAbstract(clazz.getModifiers()) &&
+						!clazz.isInterface() && RestApi.class.isAssignableFrom(clazz) ) {
+					Constructor<?> c = clazz.getConstructor(ServletContext.class);
+					RestApi api = (RestApi) c.newInstance(context);
+					// 明示的にinit() を呼び出す
+					api.init();
+					apiMap.put(api.getApiName(), api);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -87,7 +103,7 @@ public class RestApiServlet extends HttpServlet {
 	@Override
 	public void destroy() {
 		// 明示的にdestroy() を呼び出す
-		for (AbstractApi api : apiMap.values()) {
+		for (RestApi api : apiMap.values()) {
 			api.destroy();
 		}
 
@@ -140,7 +156,7 @@ public class RestApiServlet extends HttpServlet {
 		if (params.length > 1) {
 			if (!params[1].isEmpty()) {
 				req.setAttribute("API_PATH", params.length > 2 ? params[2] : null);
-				AbstractApi api = apiMap.get(params[1]);
+				RestApi api = apiMap.get(params[1]);
 				if (api != null) {
 					// 対象が見つかった場合、処理を委譲する
 					api.service(req, res);
@@ -158,4 +174,3 @@ public class RestApiServlet extends HttpServlet {
 		res.setStatus(HttpServletResponse.SC_NOT_FOUND);
 	}
 }
-

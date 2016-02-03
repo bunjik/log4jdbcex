@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Fumiharu Kinoshita
+ * Copyright 2016 Fumiharu Kinoshita
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,17 +23,19 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 
+import info.bunji.jdbc.logger.JdbcLoggerFactory;
+
 /**
  **********************************************************
  * implements Connection Wrapper.
+ *
+ * @author f.kinoshita
  **********************************************************
  */
-public class ConnectionProxy implements InvocationHandler {
+public class ConnectionProxy extends LoggerHelper implements InvocationHandler {
 
 	/** real Connection */
 	private Connection _conn;
-
-	private String _url;
 
 	/**
 	 **********************************************
@@ -43,37 +45,30 @@ public class ConnectionProxy implements InvocationHandler {
 	 **********************************************
 	 */
 	ConnectionProxy(Connection conn, String url) {
-		//super(url);
-		_url = url;
+		super(url);
 		_conn = conn;
-	}
-
-	/**
-	 **********************************************
-	 * get connection url.
-	 *
-	 * @return connection url
-	 **********************************************
-	 */
-	String getUrl() {
-		return _url;
 	}
 
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		try {
-			String name = method.getName();
+			// Connection pooling環境で動的にログレベルを変えるためには
+			// Ststementで制御すべき
+			if (!JdbcLoggerFactory.getLogger().isJdbcLoggingEnabled()) {
+				return method.invoke(_conn, args);
+			}
 
 			Object ret;
+			String name = method.getName();
 			if (name.equals("createStatement")) {
 				Statement stmt = (Statement) method.invoke(_conn, args);
-				ret = ProxyFactory.wrapStatement(stmt, _url);
+				ret = ProxyFactory.wrapStatement(stmt, url);
 			} else if (name.equals("prepareStatement")) {
 				PreparedStatement stmt = (PreparedStatement) method.invoke(_conn, args);
-				ret = ProxyFactory.wrapPreparedStatement(stmt, _url, args[0].toString());
+				ret = ProxyFactory.wrapPreparedStatement(stmt, url, args[0].toString());
 			} else if (name.equals("prepareCall")) {
 				CallableStatement stmt = (CallableStatement) method.invoke(_conn, args);
-				ret = ProxyFactory.wrapCallableStatement(stmt, _url, args[0].toString());
+				ret = ProxyFactory.wrapCallableStatement(stmt, url, args[0].toString());
 			} else {
 				ret = method.invoke(_conn, args);
 			}

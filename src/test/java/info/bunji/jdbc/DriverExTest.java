@@ -6,12 +6,18 @@ import static org.junit.Assert.*;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
-import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+
+import org.apache.commons.dbcp.BasicDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+/**
+ * @author f.kinoshita
+ */
 public class DriverExTest {
 
 	public static String acceptUrl = "jdbc:log4jdbcex:h2:~/test;SCHEMA=INFORMATION_SCHEMA";
@@ -25,12 +31,22 @@ public class DriverExTest {
 		driver = DriverManager.getDriver(acceptUrl);
 		prop.setProperty("user", "sa");
 		prop.setProperty("password", "");
-	}
 
-//	@Test
-//	public void testExtractSettingPath() {
-//		fail("まだ実装されていません");
-//	}
+		// create InitialContext
+		System.setProperty(Context.INITIAL_CONTEXT_FACTORY, "org.apache.naming.java.javaURLContextFactory");
+		System.setProperty(Context.URL_PKG_PREFIXES, "org.apache.naming");
+		InitialContext ic = new InitialContext();
+		ic.createSubcontext("java:");
+		ic.createSubcontext("java:comp");
+		ic.createSubcontext("java:comp/env");
+		ic.createSubcontext("java:comp/env/jdbc");
+
+		// bind DataSource
+		BasicDataSource ds = new BasicDataSource();
+		ds.setUrl(DriverExTest.acceptUrl);
+		ds.setUsername("sa");
+		ic.bind("java:comp/env/jdbc/log4jdbcDs", ds);
+	}
 
 	@Test
 	public void testAcceptsURL() throws Exception {
@@ -102,15 +118,14 @@ public class DriverExTest {
 //		assertThat(logger, is(h2Logger));
 //	}
 
-	@Test
-	public void testGetParentLogger2() {
-		Driver d = new DriverEx();
-		try {
-			d.getParentLogger();
-			fail();
-		} catch (Exception e) {
-			assertThat(e, instanceOf(SQLFeatureNotSupportedException.class));
-		}
-	}
-
+//	@Test
+//	public void testGetParentLogger2() {
+//		Driver d = new DriverEx();
+//		try {
+//			d.getParentLogger();
+//			fail();
+//		} catch (Exception e) {
+//			assertThat(e, instanceOf(SQLFeatureNotSupportedException.class));
+//		}
+//	}
 }

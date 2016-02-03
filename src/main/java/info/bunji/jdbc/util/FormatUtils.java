@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Fumiharu Kinoshita
+ * Copyright 2016 Fumiharu Kinoshita
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,8 @@
  */
 package info.bunji.jdbc.util;
 
-import java.lang.reflect.Field;
-
-import blanco.commons.sql.format.BlancoSqlFormatter;
-import blanco.commons.sql.format.BlancoSqlRule;
+import org.hibernate.engine.jdbc.internal.BasicFormatterImpl;
+import org.hibernate.engine.jdbc.internal.Formatter;
 
 /**
  *
@@ -26,21 +24,14 @@ import blanco.commons.sql.format.BlancoSqlRule;
  */
 public class FormatUtils {
 
-	private static final BlancoSqlRule rule = new BlancoSqlRule();
-
-	private static final BlancoSqlFormatter formatter;
+	private static Formatter formatter = null;
 
 	static {
-		// SQLキーワードは大文字に変換
-		rule.setKeywordCase(BlancoSqlRule.KEYWORD_UPPER_CASE);
 		try {
-			// 可能ならインデントを変更
-			Field field = rule.getClass().getField("indentSring");
-			field.setAccessible(true);
-			field.set(rule, "  ");
-		} catch (Exception e) {}
-
-		formatter = new BlancoSqlFormatter(rule);
+			formatter = new BasicFormatterImpl();
+		} catch (Exception e) {
+			// do nothing.
+		}
 	}
 
 	/**
@@ -51,15 +42,14 @@ public class FormatUtils {
 	 **********************************************
 	 */
 	public static String formatSql(final String sql) {
+		String retSql = sql;
 		try {
-			// ThreadSafeではないため、インスタンスを生成する
-			//return new BlancoSqlFormatter(rule).format(sql);
-			synchronized (formatter) {
-				return formatter.format(sql);
+			if (formatter != null) {
+				retSql = formatter.format(sql).trim();
 			}
 		} catch (Exception e) {
 			// not formated.
-			return sql;
 		}
+		return retSql;
 	}
 }

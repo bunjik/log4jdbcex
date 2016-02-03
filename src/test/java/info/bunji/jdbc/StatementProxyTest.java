@@ -6,20 +6,23 @@ package info.bunji.jdbc;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * @author bunji
+ * @author f.kinoshita
  *
  */
 public class StatementProxyTest {
@@ -27,13 +30,33 @@ public class StatementProxyTest {
 	Connection conn;
 
 	@BeforeClass
-	public static void setUpClass() throws Exception {
+	public static void setUpBeforeClass() throws Exception {
 		Connection c = DriverManager.getConnection(DriverExTest.acceptUrl, "sa", "");
-		c.createStatement().execute("drop table if exists test");
-		c.createStatement().execute("create table test(aaa varchar(10))");
+		Statement stmt = c.createStatement();
+		stmt.execute("drop table if exists test");
+		stmt.execute("create table test(aaa varchar(10))");
+
+		// regist procedure
+		stmt.execute("drop alias if exists proctest");
+		StringBuilder buf = new StringBuilder();
+		buf.append("create alias proctest as $$")
+			.append("String proctest(String str, int len) {")
+			.append(" if(str != null && str.length() < len) {")
+			.append("   return str;")
+			.append(" }")
+			.append(" return str.substring(0, len);")
+			.append("}$$");
+		stmt.execute(buf.toString());
+
 		c.close();
 	}
 
+	@AfterClass
+	public static void setUpAfterClass() throws Exception {
+		Connection c = DriverManager.getConnection(DriverExTest.acceptUrl, "sa", "");
+		c.createStatement().execute("drop table if exists test");
+		c.close();
+	}
 
 	/**
 	 * @throws java.lang.Exception
@@ -52,7 +75,7 @@ public class StatementProxyTest {
 	 * {@link info.bunji.jdbc.StatementProxy#StatementProxy()} のためのテスト・メソッド。
 	 */
 	@Test
-	public void testStatementProxyStatement() throws Exception {
+	public void testCreateStatement() throws Exception {
 		Statement  stmt = conn.createStatement();
 		assertThat(stmt.executeQuery("SELECT * from test"), is(notNullValue()));
 	}
@@ -61,11 +84,32 @@ public class StatementProxyTest {
 	 * {@link info.bunji.jdbc.StatementProxy#StatementProxy(java.sql.Statement, java.lang.String)} のためのテスト・メソッド。
 	 */
 	@Test
-	public void testStatementProxyStatementString() throws Exception {
+	public void testPrepareStatement() throws Exception {
 		PreparedStatement stmt = conn.prepareStatement("SELECT * from test");
 		stmt.clearParameters();
 		assertThat(stmt, is(notNullValue()));
 	}
+
+	/**
+	 * {@link info.bunji.jdbc.StatementProxy#StatementProxy(java.sql.Statement, java.lang.String)} のためのテスト・メソッド。
+	 */
+	@Test
+	public void testPrepareCall() throws Exception {
+		CallableStatement stmt = conn.prepareCall("call proctest(?, ?)");
+		assertThat(stmt, is(notNullValue()));
+
+		stmt.setString(1, "TestString");
+		stmt.setInt(2, 4);
+		//stmt.setString("P1", "TestString");
+		//stmt.setInt("P2", 4);
+
+		ResultSet rs = stmt.executeQuery();
+		assertThat(rs.next(), is(true));
+		assertThat(rs.getString(1), is("Test"));
+
+		stmt.close();
+	}
+
 
 	@Test
 	public void testAddBatchString() throws Exception {

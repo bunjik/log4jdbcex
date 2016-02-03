@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Fumiharu Kinoshita
+ * Copyright 2016 Fumiharu Kinoshita
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,10 @@ import info.bunji.jdbc.specifics.OracleRdbmsSpecifics;
 import info.bunji.jdbc.specifics.RdbmsSpecifics;
 import info.bunji.jdbc.util.FormatUtils;
 
+/**
+ *
+ * @author f.kinoshita
+ */
 public abstract class AbstractJdbcLogger implements JdbcLogger {
 
 	/** 実行中のStatementオブジェクトを保持する配列 */

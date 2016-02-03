@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Fumiharu Kinoshita
+ * Copyright 2016 Fumiharu Kinoshita
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,18 +36,16 @@ import java.util.regex.Pattern;
  * implements Statement Wrapper.
  * <pre>
  * wrapped for
- * Statement
- * PreparedStatement
- * CallableStatement
+ *  Statement
+ *  PreparedStatement
+ *  CallableStatement
  * </pre>
+ * @author f.kinoshita
  */
 public class StatementProxy extends LoggerHelper implements InvocationHandler {
 
 	/** 実際のインスタンス */
-	private Statement _instance;
-
-	/**  */
-//	private String _sql = null;
+	private Statement _stmt;
 
 	/** ロギング対象のメソッド */
 	private static final Set<String> loggingMethods = new HashSet<String>(
@@ -147,7 +145,7 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 	 */
 	StatementProxy(Statement instance, String url) {
 		super(url);
-		_instance = instance;
+		_stmt = instance;
 	}
 
 	/**
@@ -176,7 +174,7 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 			}
 			try {
 				startExecute(sql);
-				ret = method.invoke(_instance, args);
+				ret = method.invoke(_stmt, args);
 				if(name.endsWith("Batch")) {
 					reportBatchReturned();
 				} else {
@@ -190,7 +188,7 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 			}
 		} else {
 			try {
-				ret = method.invoke(_instance, args);
+				ret = method.invoke(_stmt, args);
 			} catch(InvocationTargetException e) {
 				throw e.getCause();
 			}
@@ -258,12 +256,12 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 					pos = procName.lastIndexOf(".");
 					name = procName.substring(pos + 1);
 				} else {
-					catalog = _instance.getConnection().getCatalog();
+					catalog = _stmt.getConnection().getCatalog();
 				}
 
 				Map<String,Integer> procInfo = new HashMap<String,Integer>();
 
-				DatabaseMetaData meta = _instance.getConnection().getMetaData();
+				DatabaseMetaData meta = _stmt.getConnection().getMetaData();
 				ResultSet rs = meta.getProcedureColumns(catalog, null, name.toUpperCase(), "%");
 				while (rs.next()) {
 					// パラメータ名をキーにインデックスを保持する

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Fumiharu Kinoshita
+ * Copyright 2016 Fumiharu Kinoshita
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ import net.arnx.jsonic.JSON;
  *  3. log4j
  *  4. java.util.logging
  *
- * 設定ファイルの形式
+ * logging setting examples:
  * {
  *  "_default_": {
  *		"timeThreshold": 0,

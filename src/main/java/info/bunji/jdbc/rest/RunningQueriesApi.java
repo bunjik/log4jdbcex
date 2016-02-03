@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Fumiharu Kinoshita
+ * Copyright 2016 Fumiharu Kinoshita
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,11 +35,21 @@ import net.arnx.jsonic.JSON;
 
 /**
  *
+ * @author f.kinoshita
  */
 class RunningQueriesApi extends AbstractApi {
 
 	public RunningQueriesApi(ServletContext context) {
 		super(context);
+	}
+
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.rest.RestApi#getApiName()
+	 */
+	@Override
+	public String getApiName() {
+		return "running";
 	}
 
 	@Override

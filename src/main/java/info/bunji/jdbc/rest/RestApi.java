@@ -13,22 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package info.bunji.jdbc.specifics;
+package info.bunji.jdbc.rest;
+
+import javax.servlet.Servlet;
+import javax.servlet.ServletException;
 
 /**
  *
  * @author f.kinoshita
  */
-public interface RdbmsSpecifics {
+public interface RestApi extends Servlet {
 
 	/**
-	 * Format an Object that is being bound to a PreparedStatement parameter, for display. The goal is to reformat the
-	 * object in a format that can be re-run against the native SQL client of the particular Rdbms being used.  This
-	 * class should be extended to provide formatting instances that format objects correctly for different RDBMS
-	 * types.
-	 *
-	 * @param object jdbc object to be formatted.
-	 * @return formatted dump of the object.
+	 *  呼び出し時のパスを取得する
+	 * @return
 	 */
-	String formatParameterObject(Object object);
+	String getApiName();
+
+	void init() throws ServletException;
+
+	@Override
+	void destroy();
 }
