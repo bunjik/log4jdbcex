@@ -1,52 +1,31 @@
-/*
- * Copyright 2015 Fumiharu Kinoshita
+/**
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
 package info.bunji.jdbc;
 
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
-import info.bunji.jdbc.logger.JdbcLogger;
-import info.bunji.jdbc.logger.JdbcLoggerFactory;
-
 /**
- * @author f.kinoshita
+ *
+ * @author Fumiharu Kinoshita
  */
-public class DriverEx implements Driver {
+public class DriverEx implements java.sql.Driver {
 
 	/** driver name */
 	public static final String DRIVER_NAME = "log4jdbcex";
 
 	/** connection url prefix */
 	public static final String DRIVER_URL_PREFIX = "jdbc:" + DRIVER_NAME + ":";
-
-	private static JdbcLogger logger = JdbcLoggerFactory.getLogger();
-
-	/** real jdbc driver */
-	private Driver realDriver;
 
 	static {
 		Set<String> subDrivers = new TreeSet<String>();
@@ -56,8 +35,8 @@ public class DriverEx implements Driver {
 		subDrivers.add("oracle.jdbc.OracleDriver");
 		subDrivers.add("com.sybase.jdbc2.jdbc.SybDriver");
 		subDrivers.add("net.sourceforge.jtds.jdbc.Driver");
-		subDrivers.add("com.microsoft.jdbc.sqlserver.SQLServerDriver");	// SQLServer 2000
-		subDrivers.add("com.microsoft.sqlserver.jdbc.SQLServerDriver");	// SQLServer 2005
+		subDrivers.add("com.microsoft.jdbc.sqlserver.SQLServerDriver"); // SQLServer 2000
+		subDrivers.add("com.microsoft.sqlserver.jdbc.SQLServerDriver"); // SQLServer 2005
 		subDrivers.add("weblogic.jdbc.sqlserver.SQLServerDriver");
 		subDrivers.add("com.informix.jdbc.IfxDriver");
 		subDrivers.add("org.apache.derby.jdbc.ClientDriver");
@@ -67,40 +46,96 @@ public class DriverEx implements Driver {
 		subDrivers.add("org.hsqldb.jdbcDriver");
 		subDrivers.add("org.h2.Driver");
 
-		// 自分自身をDriverManagerに登録
-		try {
-			DriverManager.registerDriver(new DriverEx());
-		} catch (SQLException s) {
-			throw (RuntimeException) new RuntimeException("could not register driver!").initCause(s);
-		}
-
-		// クラスパスに存在するドライバをロードする
+		// クラスパスに存在する既知のドライバをロードする
 		// (JDBC4.0対応のドライバなら不要だが害はないため実行しておく)
 		Iterator<String> it = subDrivers.iterator();
 		while (it.hasNext()) {
-			String driverClass = it.next();
 			try {
-				Class.forName(driverClass);
+				Class.forName(it.next());
 			} catch (Throwable c) {
-				it.remove();
+				// do nothing.
 			}
 		}
 
-		// JDBCドライバを列挙する
-		int count = 0;
-		Enumeration<Driver> drivers = DriverManager.getDrivers();
-		while(drivers.hasMoreElements()) {
-			Driver driver = drivers.nextElement();
-			if (!driver.getClass().equals(DriverEx.class)) {
-				logger.debug("Found driver : " + driver.getClass().getName());
-				count++;
-			}
+		// 自分自身をDriverManagerに登録
+		try {
+			DriverManager.registerDriver(ProxyFactory.wrapDriver());
+		} catch (Exception s) {
+			throw new RuntimeException("could not register driver!", s);
 		}
+	}
 
-		// 自分以外のDriverが見つからない場合
-		if (count == 0) {
-			logger.info("jdbc driver not found.");
-		}
+	/*
+	 * (非 Javadoc)
+	 *
+	 * @see java.sql.Driver#connect(java.lang.String, java.util.Properties)
+	 */
+	@Override
+	public Connection connect(String url, Properties info) throws SQLException {
+		Driver driver = ProxyFactory.wrapDriver();
+		return driver.connect(url, info);
+	}
+
+	/*
+	 * (非 Javadoc)
+	 *
+	 * @see java.sql.Driver#acceptsURL(java.lang.String)
+	 */
+	@Override
+	public boolean acceptsURL(String url) throws SQLException {
+		Driver driver = ProxyFactory.wrapDriver();
+		return driver.acceptsURL(url);
+	}
+
+	/*
+	 * (非 Javadoc)
+	 *
+	 * @see java.sql.Driver#getPropertyInfo(java.lang.String,
+	 * java.util.Properties)
+	 */
+	@Override
+	public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
+		return new DriverPropertyInfo[0];
+	}
+
+	/*
+	 * (非 Javadoc)
+	 *
+	 * @see java.sql.Driver#getMajorVersion()
+	 */
+	@Override
+	public int getMajorVersion() {
+		return 1;
+	}
+
+	/*
+	 * (非 Javadoc)
+	 *
+	 * @see java.sql.Driver#getMinorVersion()
+	 */
+	@Override
+	public int getMinorVersion() {
+		return 0;
+	}
+
+	/*
+	 * (非 Javadoc)
+	 *
+	 * @see java.sql.Driver#jdbcCompliant()
+	 */
+	//@Override
+	public boolean jdbcCompliant() {
+		return false;
+	}
+
+	/*
+	 * (非 Javadoc)
+	 *
+	 * @see java.sql.Driver#getParentLogger()
+	 */
+	@Override
+	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+		throw new SQLFeatureNotSupportedException();
 	}
 
 	/**
@@ -112,137 +147,25 @@ public class DriverEx implements Driver {
 	 * @param url 接続URL
 	 * @return [0]:設定ファイルのパラメータを除去した接続URL [1]:設定ファイル名
 	 */
-	public static String[] extractSettingPath(String url) {
-		// [0]:本来のURL [1]:設定ファイル名
-		String[] ret = new String[2];
+//	public static String[] extractSettingPath(String url) {
+//		// [0]:本来のURL [1]:設定ファイル名
+//		String[] ret = new String[2];
+//
+//		String configParam = "loggerconfig=";
+//		int bgnPos = url.toLowerCase().indexOf(configParam);
+//		if (bgnPos != -1) {
+//			String regex = "(?i)" + configParam + ".*?";
+//			int endPos = url.indexOf(";", bgnPos);
+//			if(endPos != -1) {
+//				regex += ";";
+//			}
+//			ret[0] = url.replaceAll(regex, "");
+//			ret[1] = url.substring(bgnPos + configParam.length());
+//			ret[1] = ret[1].replaceAll(";", "");
+//		} else {
+//			ret[0] = url;
+//		}
+//		return ret;
+//	}
 
-		String configParam = "loggerconfig=";
-		int bgnPos = url.toLowerCase().indexOf(configParam);
-		if (bgnPos != -1) {
-			String regex = "(?i)" + configParam + ".*?";
-			int endPos = url.indexOf(";", bgnPos);
-			if(endPos != -1) {
-				regex += ";";
-			}
-			ret[0] = url.replaceAll(regex, "");
-			ret[1] = url.substring(bgnPos + configParam.length());
-			ret[1] = ret[1].replaceAll(";", "");
-		} else {
-			ret[0] = url;
-		}
-		return ret;
-	}
-
-	private Driver getUnderlyingDriver(String url) throws SQLException {
-
-		if (url.startsWith(DRIVER_URL_PREFIX)) {
-			// 実際の接続URLを抽出する
-			String realUrl = extractSettingPath("jdbc:" + url.substring(DRIVER_URL_PREFIX.length()))[0];
-
-			Enumeration<Driver> e = DriverManager.getDrivers();
-			while (e.hasMoreElements()) {
-				Driver d = e.nextElement();
-
-				// 自分自身は除く
-				if (d.getClass().equals(getClass())) continue;
-
-				// URLを受け付けるドライバかを判定
-				if (d.acceptsURL(realUrl)) {
-					return d;
-				}
-			}
-		}
-		return null;
-	}
-
-	/* (非 Javadoc)
-	 * @see java.sql.Driver#acceptsURL(java.lang.String)
-	 */
-	@Override
-	public boolean acceptsURL(String url) throws SQLException {
-		Driver d = getUnderlyingDriver(url);
-		if (d != null) {
-			realDriver = d;
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	/* (非 Javadoc)
-	 * @see java.sql.Driver#connect(java.lang.String, java.util.Properties)
-	 */
-	@Override
-	public Connection connect(String url, Properties info) throws SQLException {
-		// get real driver
-		Driver d = getUnderlyingDriver(url);
-		if (d == null) {
-			return null;
-		}
-
-		realDriver = d;
-		String[] parsedUrl = extractSettingPath("jdbc:" + url.substring(DRIVER_URL_PREFIX.length()));
-		String realUrl = parsedUrl[0];
-
-		Connection conn = d.connect(realUrl, info);
-		if (conn == null) {
-			throw new SQLException("invalid or unknown driver url: " + realUrl);
-		}
-
-		// ロギングが有効、またはCSVロードが有効な場合は、ラップしたコネクションを返す
-		//if (logger.isJdbcLoggingEnabled() || parsedUrl[1] != null) {
-		//	conn = new ConnectionEx(conn, realUrl, parsedUrl[1]);
-		//}
-		if (logger.isJdbcLoggingEnabled()) {
-			conn = ProxyFactory.wrapConnection(conn, realUrl);
-		}
-		return conn;
-	}
-
-	/* (非 Javadoc)
-	 * @see java.sql.Driver#getMajorVersion()
-	 */
-	@Override
-	public int getMajorVersion() {
-		return realDriver == null ? 1 : realDriver.getMajorVersion();
-	}
-
-	/* (非 Javadoc)
-	 * @see java.sql.Driver#getMinorVersion()
-	 */
-	@Override
-	public int getMinorVersion() {
-		return realDriver == null ? 0 : realDriver.getMinorVersion();
-	}
-
-	/* (非 Javadoc)
-	 * @see java.sql.Driver#getPropertyInfo(java.lang.String, java.util.Properties)
-	 */
-	@Override
-	public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
-		Driver d = getUnderlyingDriver(url);
-		if (d == null) {
-			return new DriverPropertyInfo[0];
-		}
-		realDriver = d;
-		return d.getPropertyInfo(url, info);
-	}
-
-	/* (非 Javadoc)
-	 * @see java.sql.Driver#jdbcCompliant()
-	 */
-	@Override
-	public boolean jdbcCompliant() {
-		return realDriver != null && realDriver.jdbcCompliant();
-	}
-
-	//@Override
-	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-		try {
-			Method method = realDriver.getClass().getMethod("getParentLogger");
-			return (Logger) method.invoke(realDriver);
-		} catch (Exception e) {
-			throw new SQLFeatureNotSupportedException();
-		}
-	}
 }

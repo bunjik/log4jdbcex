@@ -6,6 +6,7 @@ import static org.junit.Assert.*;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 
 import org.junit.BeforeClass;
@@ -38,10 +39,25 @@ public class DriverExTest {
 	}
 
 	@Test
+	public void testAcceptsURL2() throws Exception {
+		Driver d = new DriverEx();
+		assertThat(d.acceptsURL(acceptUrl), is(true));
+		assertThat(d.acceptsURL(realUrl), is(false));
+	}
+
+	@Test
 	public void testConnect() throws Exception {
 		assertThat(driver.connect(acceptUrl, prop), is(notNullValue()));
 		assertThat(driver.connect(realUrl, prop), is(nullValue()));
 		assertThat(driver.connect(realUrl, new Properties()), is(nullValue()));
+	}
+
+	@Test
+	public void testConnect2() throws Exception {
+		Driver d = new DriverEx();
+		assertThat(d.connect(acceptUrl, prop), is(notNullValue()));
+		assertThat(d.connect(realUrl, prop), is(nullValue()));
+		assertThat(d.connect(realUrl, new Properties()), is(nullValue()));
 	}
 
 	@Test
@@ -72,7 +88,29 @@ public class DriverExTest {
 
 	@Test
 	public void testJdbcCompliant() {
+		Driver d = new DriverEx();
+		assertThat(d.jdbcCompliant(), is(false));
 		Driver h2 = new org.h2.Driver();
 		assertThat(driver.jdbcCompliant(), is(h2.jdbcCompliant()));
 	}
+
+//	@Test
+//	public void testGetParentLogger() throws Exception {
+//		Logger logger = driver.getParentLogger();
+//		Driver h2 = new org.h2.Driver();
+//		Logger h2Logger = h2.getParentLogger();
+//		assertThat(logger, is(h2Logger));
+//	}
+
+	@Test
+	public void testGetParentLogger2() {
+		Driver d = new DriverEx();
+		try {
+			d.getParentLogger();
+			fail();
+		} catch (Exception e) {
+			assertThat(e, instanceOf(SQLFeatureNotSupportedException.class));
+		}
+	}
+
 }

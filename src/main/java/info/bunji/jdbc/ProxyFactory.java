@@ -19,6 +19,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.Driver;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 
@@ -31,6 +32,17 @@ class ProxyFactory {
 
 	private ProxyFactory() {
 		super();
+	}
+
+	/**
+	 ********************************************
+	 *
+	 * @param driver real driver
+	 * @return wrapperd driver
+	 ********************************************
+	 */
+	static Driver wrapDriver() {
+		return factory.newProxyInstance(Driver.class, new DriverProxy());
 	}
 
 	/**

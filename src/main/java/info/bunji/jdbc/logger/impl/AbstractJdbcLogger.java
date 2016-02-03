@@ -273,7 +273,7 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 							}
 						} else {
 							// エラー時は条件にかかわらず出力
-							warn(String.format(BATCH_MSG_FORMAT, i + 1, list.size(), sql));
+							error(String.format(BATCH_MSG_FORMAT, i + 1, list.size(), sql));
 						}
 					}
 					debug(BATCH_RESULT_FORMAT, elapsed, ret.length, ret.length);
@@ -281,7 +281,7 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 					String sql = helper.dumpSql();
 					long now = System.currentTimeMillis();
 					long elapsed = now - helper.getStartTime();
-					warn(String.format(EXCEPTION_MSG_FORMAT, elapsed, sql));
+					error(String.format(EXCEPTION_MSG_FORMAT, elapsed, sql));
 					queryHistory.add(new QueryInfo(helper.getStartTime(), elapsed, sql, t));
 				}
 			}

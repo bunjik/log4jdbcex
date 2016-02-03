@@ -109,7 +109,7 @@ public class JdbcLoggerFactory {
 		InputStream is = null;
 		try {
 			// 設定ファイルの読み込み
-			is = JdbcLoggerFactory.class.getResourceAsStream(SETTING_FILE);
+			is = JdbcLoggerFactory.class.getResourceAsStream("/" + SETTING_FILE);
 			if (is != null) {
 				try {
 					settingMap = JSON.decode(is);
@@ -156,7 +156,6 @@ public class JdbcLoggerFactory {
 	 ********************************************
 	 */
 	private JdbcLoggerFactory() {
-		// can't call private constructor.
 	}
 
 	/**

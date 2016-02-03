@@ -1,0 +1,9 @@
+{
+	"_default_": {
+		"timeThreshold": 0,
+		"acceptFilter": ".*",
+		"ignoreFilter": null,
+		"historyCount": 30,
+		"format": true
+	}
+}

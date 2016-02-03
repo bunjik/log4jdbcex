@@ -130,27 +130,7 @@ public abstract class LoggerHelper {
 	void clearParameterList() {
 		_paramList.clear();
 	}
-/*
-	public Object reportResult(Object execResult) {
-		logger.reportReturned(this);
-		return execResult;
-	}
 
-	public int reportReturned(int execResult) {
-		logger.reportReturned(this);
-		return execResult;
-	}
-
-	boolean reportReturned(boolean execResult) {
-		logger.reportReturned(this);
-		return execResult;
-	}
-
-	ResultSet reportReturned(ResultSet execResult) {
-		logger.reportReturned(this);
-		return execResult;
-	}
-*/
 	void reportReturned() {
 		logger.reportReturned(this);
 	}
@@ -162,12 +142,10 @@ public abstract class LoggerHelper {
 	 * @return
 	 ********************************************
 	 */
-//	int[] reportReturned(int[] execResult) {
 	void reportBatchReturned() {
 		try {
 			isExecuteBatch = true;
 			logger.reportReturned(this);
-//			return execResult;
 		} finally {
 			isExecuteBatch = false;
 			clearBatchList();
@@ -322,7 +300,7 @@ public abstract class LoggerHelper {
 
 		public String getName() { return name; }
 
-		public int getType() { return type; }
+		//public int getType() { return type; }
 
 		public Object getValue() { return value; }
 	}

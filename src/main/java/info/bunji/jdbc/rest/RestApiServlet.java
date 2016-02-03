@@ -49,7 +49,7 @@ public class RestApiServlet extends HttpServlet {
 	public void init() throws ServletException {
 		super.init();
 
-		ServletContext context =getServletContext();
+		ServletContext context = getServletContext();
 
 		// データソース初期化のため、一旦コネクションを取得する
 		try {
@@ -73,7 +73,7 @@ public class RestApiServlet extends HttpServlet {
 		apiMap.put("running", new RunningQueriesApi(context));
 
 		// for Test
-		apiMap.put("test", new TestQueryApi(context));
+		//apiMap.put("test", new TestQueryApi(context));
 
 		// 明示的にinit() を呼び出す
 		for (AbstractApi api : apiMap.values()) {

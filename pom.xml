@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>info.bunji</groupId>
 	<artifactId>log4jdbcex</artifactId>
-	<version>0.1-SNAPSHOT</version>
+	<version>0.1</version>
 	<packaging>jar</packaging>
 	<name>log4jdbcex</name>
     <description>A jdbc logging driver</description>
@@ -29,7 +29,6 @@
 		<url>https://github.com/bunjik/log4jdbcex</url>
 		<connection>scm:git:git@github.com:bunjik/log4jdbcex.git</connection>
 		<developerConnection>scm:git:git@github.com:bunjik/log4jdbcex.git</developerConnection>
-		<tag>log4jdbcex-0.1</tag>
 	</scm>
 
 	<developers>

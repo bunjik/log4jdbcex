@@ -47,7 +47,7 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 	private Statement _instance;
 
 	/**  */
-	private String _sql = null;
+//	private String _sql = null;
 
 	/** ロギング対象のメソッド */
 	private static final Set<String> loggingMethods = new HashSet<String>(
@@ -158,7 +158,7 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 	 */
 	StatementProxy(Statement instance, String url, String sql) {
 		this(instance, url);
-		_sql = sql;
+		setSql(sql);
 	}
 
 	/*
@@ -170,7 +170,7 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 		Object ret = null;
 		String name = method.getName();
 		if (loggingMethods.contains(name)) {
-			String sql = _sql;
+			String sql = getSql();
 			if (args != null && args.length > 0) {
 				sql = args[0] != null ? args[0].toString() : null;
 			}
