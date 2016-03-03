@@ -27,6 +27,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -165,7 +166,8 @@ abstract class AbstractApi extends HttpServlet implements RestApi {
 				Map<String, Object> o = sendRequest(method, s, baos, cookies);
 
 				// mapのマージ
-				for (String key : o.keySet()) {
+				for (Entry<String, Object> entry : o.entrySet()) {
+					String key = entry.getKey();
 					if (!resultMap.containsKey(key)) {
 						resultMap.put(key, o.get(key));
 					} else {

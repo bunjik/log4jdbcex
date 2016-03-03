@@ -327,7 +327,6 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 			try {
 				if (key.equalsIgnoreCase("timeThreshold")) {
 					int val = Integer.valueOf(value.toString());
-					//timeThreshold = (val >= 0 ? val : 0);
 					setTimeThreshold(val);
 				} else if (key.equalsIgnoreCase("historyCount")) {
 					int val = Integer.valueOf(value.toString());

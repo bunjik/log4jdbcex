@@ -135,12 +135,10 @@ public class JdbcLoggerFactory {
 			while (ne.hasMoreElements()) {
 				NameClassPair nc = ne.nextElement();
 				DataSource ds = (DataSource) ctx.lookup("java:comp/env/jdbc/" + nc.getName());
-
 				// 一般的なDataSourceの実装にはgetUrl()が含まれるため、それを利用
 				Method method = ds.getClass().getMethod("getUrl");
 				String url = (String) method.invoke(ds);
 				url = url.replace(DriverEx.DRIVER_URL_PREFIX, "jdbc:");
-				//System.out.println(nc.getName() + " = " + url);
 				dsNameMap.put(url, nc.getName());
 			}
 		} catch (Exception e) {

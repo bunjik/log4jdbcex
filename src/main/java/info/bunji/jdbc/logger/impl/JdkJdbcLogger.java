@@ -19,6 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import info.bunji.jdbc.DriverEx;
 import info.bunji.jdbc.logger.JdbcLogger;
 
 /**
@@ -28,10 +29,17 @@ import info.bunji.jdbc.logger.JdbcLogger;
  */
 public class JdkJdbcLogger extends AbstractJdbcLogger implements JdbcLogger {
 
-	private final Logger debugLogger = Logger.getLogger(LOGGER_NAME);
+	private final Logger debugLogger;
 
 	public JdkJdbcLogger(String url) {
 		super(url);
+
+		// Datasource指定時はLogger名に付与する
+		if (url.startsWith(DriverEx.DRIVER_URL_PREFIX)) {
+			debugLogger = Logger.getLogger(LOGGER_NAME);
+		} else {
+			debugLogger = Logger.getLogger(LOGGER_NAME + "." + url);
+		}
 	}
 
 	/*

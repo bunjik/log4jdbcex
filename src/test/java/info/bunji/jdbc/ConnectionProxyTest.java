@@ -11,7 +11,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -20,23 +19,13 @@ import org.junit.Test;
  * @author f.kinoshita
  *
  */
-public class ConnectionProxyTest {
+public class ConnectionProxyTest extends AbstractTest {
 
 	Connection conn;
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
-		Connection c = DriverManager.getConnection(DriverExTest.acceptUrl, "sa", "");
-		c.createStatement().execute("drop table if exists test");
-		c.createStatement().execute("create table test(aaa varchar(10))");
-		c.close();
-	}
-
-	@AfterClass
-	public static void setUpAfterClass() throws Exception {
-		Connection c = DriverManager.getConnection(DriverExTest.acceptUrl, "sa", "");
-		c.createStatement().execute("drop table if exists test");
-		c.close();
+		AbstractTest.setUpBeforeClass();
 	}
 
 	/**
@@ -44,7 +33,7 @@ public class ConnectionProxyTest {
 	 */
 	@Before
 	public void setUp() throws Exception {
-		conn = DriverManager.getConnection(DriverExTest.acceptUrl, "sa", "");
+		conn = DriverManager.getConnection(ACCEPT_URL, "sa", "");
 	}
 
 	@After
@@ -54,8 +43,8 @@ public class ConnectionProxyTest {
 
 	@Test
 	public void testGetUrl() {
-		ConnectionProxy proxy = new ConnectionProxy(conn, DriverExTest.realUrl);
-		assertThat(proxy.url, is(DriverExTest.realUrl));
+		ConnectionProxy proxy = new ConnectionProxy(conn, REAL_URL);
+		assertThat(proxy.url, is(REAL_URL));
 	}
 
 	@Test

@@ -9,6 +9,8 @@ import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 
@@ -26,20 +28,23 @@ import com.meterware.httpunit.WebResponse;
 import com.meterware.servletunit.ServletRunner;
 import com.meterware.servletunit.ServletUnitClient;
 
+import info.bunji.jdbc.AbstractTest;
 import net.arnx.jsonic.JSON;
 
 /**
  *
  * @author f.kinoshita
  */
-public class RestApiServletTest {
+public class RestApiServletTest extends AbstractTest {
 
 	private static ServletRunner sr = new ServletRunner();
 	private static ServletUnitClient client;
 
 	@BeforeClass
 	public static void beforeClass() throws Exception {
+		AbstractTest.setUpBeforeClass();
 		// register servlet mapping
+
 		sr.registerServlet("log4jdbcex/*", RestApiServlet.class.getName());
 	}
 
@@ -49,11 +54,22 @@ public class RestApiServletTest {
 	}
 
 	@Before
-	public void setUp() {
+	public void setUp() throws Exception {
 		// get client
 		client = sr.newClient();
 		client.getClientProperties().setAutoRedirect(true);
 		client.getClientProperties().setMaxRedirects(3);
+
+		StringBuilder buf = new StringBuilder();
+		buf.append("{ 'log4jdbcDs': {")
+			.append(" format: false")
+			.append("} }");
+
+		WebRequest req = new PutMethodWebRequest(
+								"http://localhost/log4jdbcex/setting",
+								new ByteArrayInputStream(buf.toString().getBytes()),
+								"application/json; charset=UTF-8");
+		client.getResponse(req);
 	}
 
 //	@Test
@@ -92,6 +108,7 @@ public class RestApiServletTest {
 		assertThat(res.getResponseCode(), is(HttpServletResponse.SC_OK));
 
 		Map<String, List<Map<String, Object>>> results = JSON.decode(res.getInputStream());
+
 		assertThat(results.containsKey("log4jdbcDs"), is(true));
 
 		List<Map<String, Object>> result = results.get("log4jdbcDs");
@@ -109,6 +126,25 @@ public class RestApiServletTest {
 
 	@Test
 	public void testRunning() throws Exception {
+		// dummy query
+		Runnable r = new Runnable() {
+			@Override
+			public void run() {
+				Connection conn = null;
+				try {
+					conn = getConnection("log4jdbcDs");
+					Statement stmt = conn.createStatement();
+					stmt.executeQuery("select waitfunc(aaa) from test");
+				} catch (Exception e) {
+					// do nothing.
+				} finally {
+					closeQuietly(conn);
+				}
+			}
+		};
+		new Thread(r).start();
+		Thread.sleep(500);
+
 		WebRequest req = new GetMethodWebRequest("http://localhost/log4jdbcex/running");
 		WebResponse res = client.getResponse(req);
 
@@ -116,26 +152,23 @@ public class RestApiServletTest {
 
 		Map<String, List<Map<String, Object>>> results = JSON.decode(res.getInputStream());
 		assertThat(results.containsKey("log4jdbcDs"), is(true));
-/*
-		List<Map<String, Object>> result = results.get("log4jdbcDs");
-		Map<String,Object> values = result.get(0);
-		assertThat(values.containsKey("dataSource"), is(true));
-		assertThat(values.containsKey("elapsed"), is(true));
-		assertThat(values.containsKey("error"), is(true));
-		assertThat(values.containsKey("errorMsg"), is(true));
-		assertThat(values.containsKey("host"), is(true));
-		assertThat(values.containsKey("sql"), is(true));
-*/
-		// TODO:check values
+		assertThat(results.get("log4jdbcDs").size(), is(1));
 
+		Thread.sleep(2000);
+
+		req = new GetMethodWebRequest("http://localhost/log4jdbcex/running");
+		res = client.getResponse(req);
+		results = JSON.decode(res.getInputStream());
+		assertThat(results.containsKey("log4jdbcDs"), is(true));
+		assertThat(results.get("log4jdbcDs").size(), is(0));
 	}
 
 	@Test
 	public void testGetSetting() throws Exception {
 		WebRequest req = new GetMethodWebRequest("http://localhost/log4jdbcex/setting");
 		WebResponse res = client.getResponse(req);
-		Map<String, Map<String, Object>> settings = JSON.decode(res.getInputStream());
 
+		Map<String, Map<String, Object>> settings = JSON.decode(res.getInputStream());
 		assertThat(settings.containsKey("log4jdbcDs"), is(true));
 
 		//"_default_": {
@@ -151,7 +184,7 @@ public class RestApiServletTest {
 		assertThat(setting, hasEntry("ignoreFilter", null));
 		assertThat(setting, hasEntry("limitLength", (Object)BigDecimal.valueOf(-1)));
 		assertThat(setting, hasEntry("historyCount", (Object)BigDecimal.valueOf(30)));
-		assertThat(setting, hasEntry("format", (Object)true));
+		assertThat(setting, hasEntry("format", (Object)false));
 	}
 
 	@Test
@@ -181,7 +214,7 @@ public class RestApiServletTest {
 		assertThat(setting, hasEntry("ignoreFilter", (Object)"^AAA"));
 		assertThat(setting, hasEntry("limitLength", (Object)BigDecimal.valueOf(-1)));
 		assertThat(setting, hasEntry("historyCount", (Object)BigDecimal.valueOf(30)));
-		assertThat(setting, hasEntry("format", (Object)true));
+		assertThat(setting, hasEntry("format", (Object)false));
 
 		// 変更前データの復旧
 		client.getResponse(new PutMethodWebRequest("http://localhost/log4jdbcex/setting",

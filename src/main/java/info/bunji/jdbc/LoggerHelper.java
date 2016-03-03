@@ -138,8 +138,6 @@ public abstract class LoggerHelper {
 	/**
 	 ********************************************
 	 * executeBatch対応
-	 * @param execResult
-	 * @return
 	 ********************************************
 	 */
 	void reportBatchReturned() {
@@ -152,6 +150,12 @@ public abstract class LoggerHelper {
 		}
 	}
 
+	/**
+	 ********************************************
+	 * logging exception.
+	 *
+	 ********************************************
+	 */
 	void reportException(Throwable t, Object... params) {
 		logger.reportException(this, t, params);
 	}

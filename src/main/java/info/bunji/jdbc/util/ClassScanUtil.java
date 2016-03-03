@@ -74,29 +74,31 @@ public class ClassScanUtil {
 							if (name.indexOf(".") == -1) {
 								try {
 									name = packageName + "."+ name;
-logger.trace(name + "(in jar)");
+									logger.trace(name + "(in jar)");
 									classList.add(Class.forName(name));
 								} catch (Throwable t) {}
 							}
-			            }
-			        }
+						}
+					}
 				} finally {
 					jarFile.close();
 				}
-		    } else {
-			    URI uri = new URI(path.toString());
-		        File[] files = new File(uri.getPath()).listFiles();
-		        for (File file: files) {
-					String name = file.getName();
-					if (name.endsWith(".class")) {
-						name = name.substring(0, name.length() - 6);
-						try {
-							name = packageName + "." + name;
-logger.trace(name + "(in path)");
-							classList.add(Class.forName(name));
-						} catch (Throwable t) {}
+			} else {
+				URI uri = new URI(path.toString());
+				File[] files = new File(uri.getPath()).listFiles();
+				if (files != null) {
+					for (File file: files) {
+						String name = file.getName();
+						if (name.endsWith(".class")) {
+							name = name.substring(0, name.length() - 6);
+							try {
+								name = packageName + "." + name;
+								logger.trace(name + "(in path)");
+								classList.add(Class.forName(name));
+							} catch (Throwable t) {}
+						}
 					}
-		        }
+				}
 		    }
 		}
 

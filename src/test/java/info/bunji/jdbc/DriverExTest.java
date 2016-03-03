@@ -8,72 +8,52 @@ import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.util.Properties;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-
-import org.apache.commons.dbcp.BasicDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
  * @author f.kinoshita
  */
-public class DriverExTest {
-
-	public static String acceptUrl = "jdbc:log4jdbcex:h2:~/test;SCHEMA=INFORMATION_SCHEMA";
-	public static String realUrl   = "jdbc:h2:~/test;SCHEMA=INFORMATION_SCHEMA";
+public class DriverExTest extends AbstractTest {
 
 	private static Driver driver;
 	private static Properties prop = new Properties();
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
-		driver = DriverManager.getDriver(acceptUrl);
+		AbstractTest.setUpBeforeClass();
+
+		driver = DriverManager.getDriver(ACCEPT_URL);
 		prop.setProperty("user", "sa");
 		prop.setProperty("password", "");
-
-		// create InitialContext
-		System.setProperty(Context.INITIAL_CONTEXT_FACTORY, "org.apache.naming.java.javaURLContextFactory");
-		System.setProperty(Context.URL_PKG_PREFIXES, "org.apache.naming");
-		InitialContext ic = new InitialContext();
-		ic.createSubcontext("java:");
-		ic.createSubcontext("java:comp");
-		ic.createSubcontext("java:comp/env");
-		ic.createSubcontext("java:comp/env/jdbc");
-
-		// bind DataSource
-		BasicDataSource ds = new BasicDataSource();
-		ds.setUrl(DriverExTest.acceptUrl);
-		ds.setUsername("sa");
-		ic.bind("java:comp/env/jdbc/log4jdbcDs", ds);
 	}
 
 	@Test
 	public void testAcceptsURL() throws Exception {
-		assertThat(driver.acceptsURL(acceptUrl), is(true));
-		assertThat(driver.acceptsURL(realUrl), is(false));
+		assertThat(driver.acceptsURL(ACCEPT_URL), is(true));
+		assertThat(driver.acceptsURL(REAL_URL), is(false));
 	}
 
 	@Test
 	public void testAcceptsURL2() throws Exception {
 		Driver d = new DriverEx();
-		assertThat(d.acceptsURL(acceptUrl), is(true));
-		assertThat(d.acceptsURL(realUrl), is(false));
+		assertThat(d.acceptsURL(ACCEPT_URL), is(true));
+		assertThat(d.acceptsURL(REAL_URL), is(false));
 	}
 
 	@Test
 	public void testConnect() throws Exception {
-		assertThat(driver.connect(acceptUrl, prop), is(notNullValue()));
-		assertThat(driver.connect(realUrl, prop), is(nullValue()));
-		assertThat(driver.connect(realUrl, new Properties()), is(nullValue()));
+		assertThat(driver.connect(ACCEPT_URL, prop), is(notNullValue()));
+		assertThat(driver.connect(REAL_URL, prop), is(nullValue()));
+		assertThat(driver.connect(REAL_URL, new Properties()), is(nullValue()));
 	}
 
 	@Test
 	public void testConnect2() throws Exception {
 		Driver d = new DriverEx();
-		assertThat(d.connect(acceptUrl, prop), is(notNullValue()));
-		assertThat(d.connect(realUrl, prop), is(nullValue()));
-		assertThat(d.connect(realUrl, new Properties()), is(nullValue()));
+		assertThat(d.connect(ACCEPT_URL, prop), is(notNullValue()));
+		assertThat(d.connect(REAL_URL, prop), is(nullValue()));
+		assertThat(d.connect(REAL_URL, new Properties()), is(nullValue()));
 	}
 
 	@Test
@@ -94,9 +74,9 @@ public class DriverExTest {
 
 	@Test
 	public void testGetPropertyInfo() throws Exception {
-		Driver realDriver = DriverManager.getDriver(realUrl);
-		realDriver.getPropertyInfo(realUrl, prop);
-		assertThat(driver.getPropertyInfo(acceptUrl, prop), is(realDriver.getPropertyInfo(realUrl, prop)));
+		Driver realDriver = DriverManager.getDriver(REAL_URL);
+		realDriver.getPropertyInfo(REAL_URL, prop);
+		assertThat(driver.getPropertyInfo(ACCEPT_URL, prop), is(realDriver.getPropertyInfo(REAL_URL, prop)));
 
 		Driver d = new DriverEx();
 		assertThat(d.getPropertyInfo("", prop), is(new DriverPropertyInfo[0]));

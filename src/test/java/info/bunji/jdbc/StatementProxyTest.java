@@ -16,7 +16,6 @@ import java.sql.Statement;
 import java.sql.Types;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -25,37 +24,13 @@ import org.junit.Test;
  * @author f.kinoshita
  *
  */
-public class StatementProxyTest {
+public class StatementProxyTest extends AbstractTest {
 
 	Connection conn;
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
-		Connection c = DriverManager.getConnection(DriverExTest.acceptUrl, "sa", "");
-		Statement stmt = c.createStatement();
-		stmt.execute("drop table if exists test");
-		stmt.execute("create table test(aaa varchar(10))");
-
-		// regist procedure
-		stmt.execute("drop alias if exists proctest");
-		StringBuilder buf = new StringBuilder();
-		buf.append("create alias proctest as $$")
-			.append("String proctest(String str, int len) {")
-			.append(" if(str != null && str.length() < len) {")
-			.append("   return str;")
-			.append(" }")
-			.append(" return str.substring(0, len);")
-			.append("}$$");
-		stmt.execute(buf.toString());
-
-		c.close();
-	}
-
-	@AfterClass
-	public static void setUpAfterClass() throws Exception {
-		Connection c = DriverManager.getConnection(DriverExTest.acceptUrl, "sa", "");
-		c.createStatement().execute("drop table if exists test");
-		c.close();
+		AbstractTest.setUpBeforeClass();
 	}
 
 	/**
@@ -63,7 +38,7 @@ public class StatementProxyTest {
 	 */
 	@Before
 	public void setUp() throws Exception {
-		conn = DriverManager.getConnection(DriverExTest.acceptUrl, "sa", "");
+		conn = DriverManager.getConnection(ACCEPT_URL, "sa", "");
 	}
 
 	@After
@@ -175,5 +150,4 @@ public class StatementProxyTest {
 			assertThat(e, instanceOf(SQLException.class));
 		}
 	}
-
 }
