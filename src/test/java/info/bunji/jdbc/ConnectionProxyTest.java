@@ -23,19 +23,25 @@ public class ConnectionProxyTest extends AbstractTest {
 
 	Connection conn;
 
+	/**
+	 * @throws Exception 意図しない例外
+	 */
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		AbstractTest.setUpBeforeClass();
 	}
 
 	/**
-	 * @throws java.lang.Exception
+	 * @throws Exception 意図しない例外
 	 */
 	@Before
 	public void setUp() throws Exception {
 		conn = DriverManager.getConnection(ACCEPT_URL, "sa", "");
 	}
 
+	/**
+	 * @throws Exception 意図しない例外
+	 */
 	@After
 	public void tearDown() throws Exception {
 		conn.close();
@@ -47,21 +53,33 @@ public class ConnectionProxyTest extends AbstractTest {
 		assertThat(proxy.url, is(REAL_URL));
 	}
 
+	/**
+	 * @throws Exception 意図しない例外
+	 */
 	@Test
 	public void testCreateStatement() throws Exception {
 		assertThat(conn.createStatement(), is(notNullValue()));
 	}
 
+	/**
+	 * @throws Exception 意図しない例外
+	 */
 	@Test
 	public void testPreparedStatement() throws Exception {
 		assertThat(conn.prepareStatement("select * from test"), is(notNullValue()));
 	}
 
+	/**
+	 * @throws Exception 意図しない例外
+	 */
 	@Test
 	public void testPrepareCall() throws Exception {
 		assertThat(conn.prepareCall("select * from test"), is(notNullValue()));
 	}
 
+	/**
+	 * @throws Exception 意図しない例外
+	 */
 	@Test(expected=SQLException.class)
 	public void testInvocationWithException() throws Exception {
 		conn.prepareStatement("insert into test(1,2,3)" ,99);

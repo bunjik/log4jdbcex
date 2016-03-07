@@ -28,26 +28,32 @@ public class StatementProxyTest extends AbstractTest {
 
 	Connection conn;
 
+	/**
+	 * @throws Exception 意図しない例外
+	 */
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		AbstractTest.setUpBeforeClass();
 	}
 
 	/**
-	 * @throws java.lang.Exception
+	 * @throws Exception 意図しない例外
 	 */
 	@Before
 	public void setUp() throws Exception {
 		conn = DriverManager.getConnection(ACCEPT_URL, "sa", "");
 	}
 
+	/**
+	 * @throws Exception 意図しない例外
+	 */
 	@After
 	public void tearDown() throws Exception {
 		conn.close();
 	}
 
 	/**
-	 * {@link info.bunji.jdbc.StatementProxy#StatementProxy()} のためのテスト・メソッド。
+	 * @throws Exception 意図しない例外
 	 */
 	@Test
 	public void testCreateStatement() throws Exception {
@@ -56,7 +62,7 @@ public class StatementProxyTest extends AbstractTest {
 	}
 
 	/**
-	 * {@link info.bunji.jdbc.StatementProxy#StatementProxy(java.sql.Statement, java.lang.String)} のためのテスト・メソッド。
+	 * @throws Exception 意図しない例外
 	 */
 	@Test
 	public void testPrepareStatement() throws Exception {
@@ -66,7 +72,7 @@ public class StatementProxyTest extends AbstractTest {
 	}
 
 	/**
-	 * {@link info.bunji.jdbc.StatementProxy#StatementProxy(java.sql.Statement, java.lang.String)} のためのテスト・メソッド。
+	 * @throws Exception 意図しない例外
 	 */
 	@Test
 	public void testPrepareCall() throws Exception {
@@ -85,7 +91,9 @@ public class StatementProxyTest extends AbstractTest {
 		stmt.close();
 	}
 
-
+	/**
+	 * @throws Exception 意図しない例外
+	 */
 	@Test
 	public void testAddBatchString() throws Exception {
 		Statement stmt = conn.createStatement();
@@ -93,6 +101,9 @@ public class StatementProxyTest extends AbstractTest {
 		assertTrue(true);
 	}
 
+	/**
+	 * @throws Exception 意図しない例外
+	 */
 	@Test
 	public void testAddBatchExecute() throws Exception {
 		Statement stmt = conn.createStatement();
@@ -104,6 +115,9 @@ public class StatementProxyTest extends AbstractTest {
 		assertThat(ret, is(equalTo(val)));
 	}
 
+	/**
+	 * @throws Exception 意図しない例外
+	 */
 	@Test
 	public void testAddBatchExecute2() throws Exception {
 		PreparedStatement stmt = conn.prepareStatement("INSERT into test values(?)");
@@ -118,18 +132,27 @@ public class StatementProxyTest extends AbstractTest {
 		assertThat(ret, is(equalTo(val)));
 	}
 
+	/**
+	 * @throws Exception 意図しない例外
+	 */
 	@Test
 	public void testIsClosed() throws Exception {
 		Statement stmt = conn.createStatement();
 		assertThat(stmt.isClosed(), is(false));
 	}
 
+	/**
+	 * @throws Exception 意図しない例外
+	 */
 	@Test
 	public void testGetConnection() throws Exception {
 		Statement stmt = conn.createStatement();
 		assertThat(stmt.getConnection(), is(notNullValue()));
 	}
 
+	/**
+	 * @throws Exception 意図しない例外
+	 */
 	@Test
 	public void testSetString() throws Exception {
 		PreparedStatement stmt = conn.prepareStatement("SELECT * from test where aaa=?");
@@ -138,7 +161,7 @@ public class StatementProxyTest extends AbstractTest {
 	}
 
 	/**
-	 * {@link info.bunji.jdbc.StatementProxy#StatementProxy()} のためのテスト・メソッド。
+	 * @throws Exception 意図しない例外
 	 */
 	@Test
 	public void testException() throws Exception {
