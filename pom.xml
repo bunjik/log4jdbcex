@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>info.bunji</groupId>
 	<artifactId>log4jdbcex</artifactId>
-	<version>0.3.1</version>
+	<version>0.3.2-SNAAAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>log4jdbcex</name>
 	<description>A jdbc logging driver</description>
