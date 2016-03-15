@@ -1,3 +1,5 @@
+[![Build Status](https://img.shields.io/travis/bunjik/log4jdbcex/master.svg)](https://travis-ci.org/bunjik/log4jdbcex)
+[![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 # log4jdbcEx
 
 ## 概要
@@ -43,7 +45,7 @@ webアプリケーションのJNDI接続にこのドライバを利用した場�
 Servlet3.0をサポートしたServetコンテナでは、web-fragment.xmlにより、自動的にUI用の
 マッピングが自動追加され、利用可能となります。
 
-**http://foo/contextName/log4jdbcex/**
+**http://host[:port]/contextName/log4jdbcex/**
 
 
 **TBD**
