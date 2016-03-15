@@ -24,6 +24,7 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 
 import info.bunji.jdbc.logger.JdbcLoggerFactory;
+import info.bunji.jdbc.util.ConnectionListener;
 
 /**
  **********************************************************
@@ -37,6 +38,8 @@ public class ConnectionProxy extends LoggerHelper implements InvocationHandler {
 	/** real Connection */
 	private Connection _conn;
 
+	public static ConnectionListener listener = null;
+
 	/**
 	 **********************************************
 	 * constractor
@@ -47,6 +50,10 @@ public class ConnectionProxy extends LoggerHelper implements InvocationHandler {
 	ConnectionProxy(Connection conn, String url) {
 		super(url);
 		_conn = conn;
+
+		if (listener != null) {
+			listener.newConnecion(this);
+		}
 	}
 
 	@Override

@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>info.bunji</groupId>
 	<artifactId>log4jdbcex</artifactId>
-	<version>0.3.2-SNAAAPSHOT</version>
+	<version>0.3.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>log4jdbcex</name>
 	<description>A jdbc logging driver</description>
@@ -15,8 +15,6 @@
 		<encoding>UTF-8</encoding>
 		<maven.test.skip>false</maven.test.skip>
 		<dryRun>false</dryRun>
-		<github.site.skip>false</github.site.skip>
-		<github.global.server>github</github.global.server>
 	</properties>
 
 	<licenses>
@@ -28,6 +26,7 @@
 
 	<scm>
 		<connection>scm:git:git@github.com:bunjik/log4jdbcex.git</connection>
+		<developerConnection>scm:git:git@github.com:bunjik/log4jdbcex.git</developerConnection>
 		<url>git@github.com:bunjik/log4jdbcex.git</url>
 		<tag>${project.version}</tag>
 	</scm>
@@ -55,10 +54,6 @@
 		    <id>ossrh</id>
 		    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
 		</repository>
-		<site>
-		    <id>github</id>
-			 <url>gitsite:git@github.com/bunjik/log4jdbcex.git</url>
-		</site>
 	</distributionManagement>
 
 	<dependencies>
@@ -108,6 +103,14 @@
 			<artifactId>commons-logging</artifactId>
 			<version>1.2</version>
 			<scope>provided</scope>
+		</dependency>
+
+		<!-- for spring -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-webmvc</artifactId>
+			<version>4.2.5.RELEASE</version>
+ 			<scope>provided</scope>
 		</dependency>
 
 		<!-- for Test -->
@@ -201,14 +204,8 @@
 						<outputEncoding>${encoding}</outputEncoding>
 						<skipDeploy>true</skipDeploy>
 					</configuration>
-					<dependencies>
-						<dependency>
-							<groupId>com.github.stephenc.wagon</groupId>
-							<artifactId>wagon-gitsite</artifactId>
-							<version>0.5</version>
-						</dependency>
-					</dependencies>
     			</plugin>
+<!--
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-deploy-plugin</artifactId>
@@ -218,7 +215,7 @@
 						<altSnapshotDeploymentRepository>internal.repo::default::file:///${project.reporting.outputDirectory}/snapshots</altSnapshotDeploymentRepository>
 					</configuration>
 				</plugin>
-
+-->
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-javadoc-plugin</artifactId>
@@ -274,18 +271,14 @@
 				<artifactId>maven-project-info-reports-plugin</artifactId>
 				<version>2.8.1</version>
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 			</plugin>
-
-			<!-- generate javadoc -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
@@ -299,7 +292,6 @@
 					</archive>
 				</configuration>
 			</plugin>
-
 			<!-- generate source.jar -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -314,7 +306,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<!-- generate PGP Signature -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -330,7 +321,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<!-- generate dependency jar -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -350,7 +340,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
 			<plugin>
 				<groupId>org.sonatype.plugins</groupId>
 				<artifactId>nexus-staging-maven-plugin</artifactId>
@@ -362,34 +351,6 @@
 					<autoReleaseAfterClose>true</autoReleaseAfterClose>
 				</configuration>
 			</plugin>
-<!--
-			<plugin>
-				<groupId>com.github.github</groupId>
-				<artifactId>site-maven-plugin</artifactId>
-				<version>0.12</version>
-				<inherited>true</inherited>
-				<configuration>
-					<merge>false</merge>
-					<noJekyll>true</noJekyll>
-					<message>Maven artifacts for ${project.artifactId} ${project.version}</message>
-					<outputDirectory>${project.reporting.outputDirectory}</outputDirectory>
-					<excludes>
-						<exclude>snapshots</exclude>
-					</excludes>
-			  		<branch>refs/heads/gh-pages</branch>
-					<path>maven</path>
-					<dryRun>${dryRun}</dryRun>
-				</configuration>
-				<executions>
-					<execution>
-						<phase>deploy</phase>
-						<goals>
-							<goal>site</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
--->
 		</plugins>
 	</build>
 

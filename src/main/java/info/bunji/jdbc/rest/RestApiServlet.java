@@ -22,10 +22,12 @@ import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.naming.InitialContext;
 import javax.naming.NameClassPair;
@@ -38,14 +40,20 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
+import info.bunji.jdbc.ConnectionProxy;
+import info.bunji.jdbc.logger.JdbcLogger;
+import info.bunji.jdbc.logger.JdbcLoggerFactory;
 import info.bunji.jdbc.util.ClassScanUtil;
+import info.bunji.jdbc.util.ConnectionListener;
 
 /**
  *
  * @author f.kinoshita
  */
 @WebServlet(name="RestApiServlet",urlPatterns={"/log4jdbcex"})
-public class RestApiServlet extends HttpServlet {
+public class RestApiServlet extends HttpServlet implements ConnectionListener {
+
+	protected JdbcLogger logger = JdbcLoggerFactory.getLogger();
 
 	/** 呼び出し可能なAPIクラスのマッピング */
 	private Map<String, RestApi> apiMap = new LinkedHashMap<String, RestApi>();
@@ -58,6 +66,9 @@ public class RestApiServlet extends HttpServlet {
 	@Override
 	public void init() throws ServletException {
 		super.init();
+
+		// listenerに自身を登録する
+		ConnectionProxy.listener = this;
 
 		ServletContext context = getServletContext();
 
@@ -172,5 +183,19 @@ public class RestApiServlet extends HttpServlet {
 
 		// 対象のAPIが見つからない場合
 		res.setStatus(HttpServletResponse.SC_NOT_FOUND);
+	}
+
+	private Set<String> urlSet = new HashSet<String>();
+
+	/* (非 Javadoc)
+	 * @see info.bunji.jdbc.util.DatasourceListener#newConnecion()
+	 */
+	@Override
+	public void newConnecion(ConnectionProxy proxy) {
+		String url = proxy.getUrl();
+		if (!urlSet.contains(url)) {
+			urlSet.add(url);
+			logger.debug("using connection url : " + url);
+		}
 	}
 }

@@ -33,7 +33,7 @@ public class CommonsLoggingJdbcLogger extends AbstractJdbcLogger {
 		super(url);
 
 		// Datasource指定時はLogger名に付与する
-		if (url.startsWith(DriverEx.DRIVER_URL_PREFIX)) {
+		if (url.startsWith(DriverEx.DRIVER_URL_PREFIX) || url.equals("_defaultLogger_")) {
 			debugLogger = LogFactory.getLog(LOGGER_NAME);
 		} else {
 			debugLogger = LogFactory.getLog(LOGGER_NAME + "." + url);

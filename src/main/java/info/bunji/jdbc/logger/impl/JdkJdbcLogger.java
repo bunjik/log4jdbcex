@@ -35,7 +35,7 @@ public class JdkJdbcLogger extends AbstractJdbcLogger implements JdbcLogger {
 		super(url);
 
 		// Datasource指定時はLogger名に付与する
-		if (url.startsWith(DriverEx.DRIVER_URL_PREFIX)) {
+		if (url.startsWith(DriverEx.DRIVER_URL_PREFIX) || url.equals("_defaultLogger_")) {
 			debugLogger = Logger.getLogger(LOGGER_NAME);
 		} else {
 			debugLogger = Logger.getLogger(LOGGER_NAME + "." + url);
