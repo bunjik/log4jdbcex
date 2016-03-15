@@ -1,5 +1,6 @@
 [![Build Status](https://img.shields.io/travis/bunjik/log4jdbcex/master.svg)](https://travis-ci.org/bunjik/log4jdbcex)
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
+[![Coverage Status](https://coveralls.io/repos/github/bunjik/log4jdbcex/badge.svg?branch=master)](https://coveralls.io/github/bunjik/log4jdbcex?branch=master)
 # log4jdbcEx
 
 ## 概要
