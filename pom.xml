@@ -12,9 +12,10 @@
 		<java.version>1.6</java.version>
 		<maven.compiler.source>1.6</maven.compiler.source>
 		<maven.compiler.target>1.6</maven.compiler.target>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<encoding>UTF-8</encoding>
 		<maven.test.skip>false</maven.test.skip>
-		<dryRun>true</dryRun>
+		<dryRun>false</dryRun>
 	</properties>
 
 	<licenses>
@@ -232,7 +233,6 @@
 						</execution>
 					</executions>
 				</plugin>
-
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>findbugs-maven-plugin</artifactId>
@@ -325,15 +325,6 @@
 					<serverId>ossrh</serverId>
 					<nexusUrl>https://oss.sonatype.org/</nexusUrl>
 					<autoReleaseAfterClose>true</autoReleaseAfterClose>
-				</configuration>
-			</plugin>
-			<!-- for coveralls -->
-			<plugin>
-				<groupId>org.eluder.coveralls</groupId>
-				<artifactId>coveralls-maven-plugin</artifactId>
-				<version>4.1.0</version>
-				<configuration>
-					<repoToken>yourcoverallsprojectrepositorytoken</repoToken>
 				</configuration>
 			</plugin>
 		</plugins>
