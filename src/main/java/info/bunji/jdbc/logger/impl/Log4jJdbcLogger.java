@@ -18,8 +18,6 @@ package info.bunji.jdbc.logger.impl;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import info.bunji.jdbc.DriverEx;
-
 /**
  * logger implementation for log4j.
  *
@@ -32,12 +30,7 @@ public class Log4jJdbcLogger extends AbstractJdbcLogger {
 	public Log4jJdbcLogger(String url) {
 		super(url);
 
-		// Datasource指定時はLogger名に付与する
-		if (url.startsWith(DriverEx.DRIVER_URL_PREFIX) || url.equals("_defaultLogger_")) {
-			debugLogger = Logger.getLogger(LOGGER_NAME);
-		} else {
-			debugLogger = Logger.getLogger(LOGGER_NAME + "." + url);
-		}
+		debugLogger = Logger.getLogger(makeLoggerName(url));
 	}
 
 	@Override

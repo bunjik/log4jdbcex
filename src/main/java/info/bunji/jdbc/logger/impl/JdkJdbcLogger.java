@@ -1,4 +1,5 @@
 /*
+
  * Copyright 2016 Fumiharu Kinoshita
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +20,6 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import info.bunji.jdbc.DriverEx;
 import info.bunji.jdbc.logger.JdbcLogger;
 
 /**
@@ -34,12 +34,7 @@ public class JdkJdbcLogger extends AbstractJdbcLogger implements JdbcLogger {
 	public JdkJdbcLogger(String url) {
 		super(url);
 
-		// Datasource指定時はLogger名に付与する
-		if (url.startsWith(DriverEx.DRIVER_URL_PREFIX) || url.equals("_defaultLogger_")) {
-			debugLogger = Logger.getLogger(LOGGER_NAME);
-		} else {
-			debugLogger = Logger.getLogger(LOGGER_NAME + "." + url);
-		}
+		debugLogger = Logger.getLogger(makeLoggerName(url));
 	}
 
 	/*

@@ -84,27 +84,32 @@ public class JdbcLoggerFactory {
 
 	private static Constructor<?> constructor;
 
+	@SuppressWarnings("unused")
+	private static JdbcLoggerFactory instance = new JdbcLoggerFactory();
+
 	/** 設定ファイルの設定情報を保持する */
 	private static Map<String,Map<String,Object>> settingMap = new HashMap<String,Map<String,Object>>();
 
 	static {
-		// 利用可能なLoggingライブラリを検索する(優先順を考慮)
-		Map<String, Class<? extends JdbcLogger>> checkLogger = new LinkedHashMap<String, Class<? extends JdbcLogger>>() {{
-			put("org.slf4j.Logger", Slf4jJdbcLogger.class);
-			put("org.apache.commons.logging.Log", CommonsLoggingJdbcLogger.class);
-			put("org.apache.log4j.Logger", Log4jJdbcLogger.class);
-			put("java.util.logging.Logger", JdkJdbcLogger.class);
-		}};
-
-		// 利用するLoggerを決定する
-		for (Entry<String, Class<? extends JdbcLogger>> entry : checkLogger.entrySet()) {
-			try {
-				// 見つかったらそのクラスを利用する
-				Class.forName(entry.getKey());
-				constructor = entry.getValue().getConstructor(String.class);
-				break;
-			} catch (Exception e) {}
-		}
+//		// 利用可能なLoggingライブラリを検索する(優先順を考慮)
+//		Map<String, Class<? extends JdbcLogger>> checkLogger = new LinkedHashMap<String, Class<? extends JdbcLogger>>() {{
+//			put("org.slf4j.Logger", Slf4jJdbcLogger.class);
+//			put("org.apache.commons.logging.Log", CommonsLoggingJdbcLogger.class);
+//			put("org.apache.log4j.Logger", Log4jJdbcLogger.class);
+//			put("java.util.logging.Logger", JdkJdbcLogger.class);
+//		}};
+//
+//		// 利用するLoggerを決定する
+//		for (Entry<String, Class<? extends JdbcLogger>> entry : checkLogger.entrySet()) {
+//			try {
+//				// 見つかったらそのクラスを利用する
+//				Class.forName(entry.getKey());
+//				constructor = entry.getValue().getConstructor(String.class);
+//				break;
+//			} catch (Exception e) {
+//				// do nothing.
+//			}
+//		}
 
 		InputStream is = null;
 		try {
@@ -126,26 +131,6 @@ public class JdbcLoggerFactory {
 		} finally {
 			try { if (is != null) is.close(); } catch(Exception e) {}
 		}
-
-		InitialContext ctx = null;
-		try {
-			// JNDIによる名称の取得を試みる
-			ctx = new InitialContext();
-			NamingEnumeration<NameClassPair> ne = ctx.list("java:comp/env/jdbc");
-			while (ne.hasMoreElements()) {
-				NameClassPair nc = ne.nextElement();
-				DataSource ds = (DataSource) ctx.lookup("java:comp/env/jdbc/" + nc.getName());
-				// 一般的なDataSourceの実装にはgetUrl()が含まれるため、それを利用
-				Method method = ds.getClass().getMethod("getUrl");
-				String url = (String) method.invoke(ds);
-				url = url.replace(DriverEx.DRIVER_URL_PREFIX, "jdbc:");
-				dsNameMap.put(url, nc.getName());
-			}
-		} catch (Exception e) {
-			// do nothing.
-		} finally {
-			try { if (ctx != null) ctx.close(); } catch(Exception e) {}
-		}
 	}
 
 	/**
@@ -154,6 +139,38 @@ public class JdbcLoggerFactory {
 	 ********************************************
 	 */
 	private JdbcLoggerFactory() {
+		// 利用するLoggerを決定する
+		constructor = getLoggerConstructor();
+	}
+
+	/**
+	 ********************************************
+	 * find logger constructor.
+	 *
+	 * @return logger constructor
+	 ********************************************
+	 */
+	private Constructor<?> getLoggerConstructor() {
+		// 利用可能なLoggingライブラリ
+		Map<String, Class<? extends JdbcLogger>> checkLogger = new LinkedHashMap<String, Class<? extends JdbcLogger>>() {{
+			put("org.slf4j.Logger", Slf4jJdbcLogger.class);
+			put("org.apache.commons.logging.Log", CommonsLoggingJdbcLogger.class);
+			put("org.apache.log4j.Logger", Log4jJdbcLogger.class);
+			put("java.util.logging.Logger", JdkJdbcLogger.class);
+		}};
+
+		// find use logger
+		Constructor<?> c = null;
+		for (Entry<String, Class<? extends JdbcLogger>> entry : checkLogger.entrySet()) {
+			try {
+				Class.forName(entry.getKey());
+				c = entry.getValue().getConstructor(String.class);
+				break;
+			} catch (Exception e) {
+				// do nothing
+			}
+		}
+		return c;
 	}
 
 	/**
@@ -165,8 +182,36 @@ public class JdbcLoggerFactory {
 	 ********************************************
 	 */
 	private static String getLoggerName(String url) {
-		String name = dsNameMap.get(url);
-		return name != null ? name : url;
+		if (!dsNameMap.containsKey(url)) {
+			dsNameMap.put(url, url);
+
+			// datasource名の解決を試みる
+			InitialContext ctx = null;
+			try {
+				// JNDIによる名称の取得を試みる
+				ctx = new InitialContext();
+				NamingEnumeration<NameClassPair> ne = ctx.list("java:comp/env/jdbc");
+				while (ne.hasMoreElements()) {
+					NameClassPair nc = ne.nextElement();
+					DataSource ds = (DataSource) ctx.lookup("java:comp/env/jdbc/" + nc.getName());
+					// 一般的なDataSourceの実装に含まれるgetUrl()を利用
+					Method method = ds.getClass().getMethod("getUrl");
+					String dsUrl = (String) method.invoke(ds);
+					if (dsUrl.startsWith(DriverEx.DRIVER_URL_PREFIX)) {
+						dsUrl = dsUrl.replace(DriverEx.DRIVER_URL_PREFIX, "jdbc:");
+						if (dsUrl.equals(url)) {
+							dsNameMap.put(url, nc.getName());
+							break;
+						}
+					}
+				}
+			} catch (Exception e) {
+				// do nothing.
+			} finally {
+				try { if (ctx != null) ctx.close(); } catch(Exception e) {}
+			}
+		}
+		return dsNameMap.get(url);
 	}
 
 	/**

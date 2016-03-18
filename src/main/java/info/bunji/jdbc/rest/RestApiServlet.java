@@ -22,12 +22,9 @@ import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.naming.InitialContext;
 import javax.naming.NameClassPair;
@@ -40,18 +37,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 
-import info.bunji.jdbc.ConnectionProxy;
 import info.bunji.jdbc.logger.JdbcLogger;
 import info.bunji.jdbc.logger.JdbcLoggerFactory;
 import info.bunji.jdbc.util.ClassScanUtil;
-import info.bunji.jdbc.util.ConnectionListener;
 
 /**
  *
  * @author f.kinoshita
  */
 @WebServlet(name="RestApiServlet",urlPatterns={"/log4jdbcex"})
-public class RestApiServlet extends HttpServlet implements ConnectionListener {
+public class RestApiServlet extends HttpServlet {
 
 	protected JdbcLogger logger = JdbcLoggerFactory.getLogger();
 
@@ -67,12 +62,10 @@ public class RestApiServlet extends HttpServlet implements ConnectionListener {
 	public void init() throws ServletException {
 		super.init();
 
-		// listenerに自身を登録する
-		ConnectionProxy.listener = this;
-
 		ServletContext context = getServletContext();
 
 		// データソース初期化のため、一旦コネクションを取得する
+		// 未接続のデータソースのタブを表示するための対策
 		try {
 			String prefix = "java:comp/env/jdbc";
 			InitialContext ctx = new InitialContext();
@@ -89,11 +82,9 @@ public class RestApiServlet extends HttpServlet implements ConnectionListener {
 		}
 
 		try {
+			// search RestApi classes
 			List<Class<?>> classes = ClassScanUtil.findClassesFromPackage(getClass().getPackage().getName());
-
-			Iterator<Class<?>> it = classes.iterator();
-			while (it.hasNext()) {
-				Class<?> clazz = it.next();
+			for (Class<?> clazz : classes) {
 				if (!Modifier.isAbstract(clazz.getModifiers()) &&
 						!clazz.isInterface() && RestApi.class.isAssignableFrom(clazz) ) {
 					Constructor<?> c = clazz.getConstructor(ServletContext.class);
@@ -183,19 +174,5 @@ public class RestApiServlet extends HttpServlet implements ConnectionListener {
 
 		// 対象のAPIが見つからない場合
 		res.setStatus(HttpServletResponse.SC_NOT_FOUND);
-	}
-
-	private Set<String> urlSet = new HashSet<String>();
-
-	/* (非 Javadoc)
-	 * @see info.bunji.jdbc.util.DatasourceListener#newConnecion()
-	 */
-	@Override
-	public void newConnecion(ConnectionProxy proxy) {
-		String url = proxy.getUrl();
-		if (!urlSet.contains(url)) {
-			urlSet.add(url);
-			logger.debug("using connection url : " + url);
-		}
 	}
 }

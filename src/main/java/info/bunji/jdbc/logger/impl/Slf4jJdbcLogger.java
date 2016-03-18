@@ -18,7 +18,6 @@ package info.bunji.jdbc.logger.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import info.bunji.jdbc.DriverEx;
 import info.bunji.jdbc.logger.JdbcLogger;
 
 /**
@@ -33,12 +32,7 @@ public class Slf4jJdbcLogger extends AbstractJdbcLogger implements JdbcLogger {
 	public Slf4jJdbcLogger(String url) {
 		super(url);
 
-		// Datasource指定時はLogger名に付与する
-		if (url.startsWith(DriverEx.DRIVER_URL_PREFIX) || url.equals("_defaultLogger_")) {
-			debugLogger = LoggerFactory.getLogger(LOGGER_NAME);
-		} else {
-			debugLogger = LoggerFactory.getLogger(LOGGER_NAME + "." + url);
-		}
+		debugLogger = LoggerFactory.getLogger(makeLoggerName(url));
 	}
 
 	/*

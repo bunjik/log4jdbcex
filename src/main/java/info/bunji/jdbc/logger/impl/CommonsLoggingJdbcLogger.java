@@ -18,8 +18,6 @@ package info.bunji.jdbc.logger.impl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import info.bunji.jdbc.DriverEx;
-
 /**
  * logger implementation for Commons-logging.
  *
@@ -32,12 +30,7 @@ public class CommonsLoggingJdbcLogger extends AbstractJdbcLogger {
 	public CommonsLoggingJdbcLogger(String url) {
 		super(url);
 
-		// Datasource指定時はLogger名に付与する
-		if (url.startsWith(DriverEx.DRIVER_URL_PREFIX) || url.equals("_defaultLogger_")) {
-			debugLogger = LogFactory.getLog(LOGGER_NAME);
-		} else {
-			debugLogger = LogFactory.getLog(LOGGER_NAME + "." + url);
-		}
+		debugLogger = LogFactory.getLog(makeLoggerName(url));
 	}
 
 	@Override

@@ -58,8 +58,6 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	/** ログ出力時の最大文字数(デフォルト:無制限[-1]) */
 	int limitLength = -1;
 
-	long lastUpdate = 0;
-
 	/** このLoggerインスタンスが出力対象とする接続URL */
 	String connectUrl;
 
@@ -108,6 +106,16 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 		} else {
 			specifics = new DefaultRdbmsSpecifics();
 		}
+	}
+
+	protected String makeLoggerName(String url) {
+		String loggerName = LOGGER_NAME;
+
+		// Datasource指定時はLogger名に付与する
+		if (!url.startsWith("jdbc:") && !url.equals("_defaultLogger_")) {
+			loggerName += "." + url;
+		}
+		return loggerName;
 	}
 
 	/*
@@ -326,10 +334,9 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 			Object value = entry.getValue();
 			try {
 				if (key.equalsIgnoreCase("timeThreshold")) {
-					int val = Integer.valueOf(value.toString());
-					setTimeThreshold(val);
+					setTimeThreshold(Long.parseLong(value.toString()));
 				} else if (key.equalsIgnoreCase("historyCount")) {
-					int val = Integer.valueOf(value.toString());
+					int val = Integer.parseInt(value.toString());
 					historyCount = (val >= 0 ? val : 0);
 				} else if (key.equalsIgnoreCase("acceptFilter")) {
 					setAcceptFilter((String)value);
@@ -338,7 +345,7 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 				} else if (key.equalsIgnoreCase("format")) {
 					isFormat = Boolean.valueOf(value.toString());
 				} else if (key.equalsIgnoreCase("limitLength")) {
-					int val = Integer.valueOf(value.toString());
+					int val = Integer.parseInt(value.toString());
 					limitLength = (val > 0 ? val : -1);
 				}
 			} catch (Exception e) {
@@ -347,9 +354,6 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 				return false;
 			}
 		}
-		// 最終更新日時を設定
-		lastUpdate = System.currentTimeMillis();
-
 		return true;
 	}
 
