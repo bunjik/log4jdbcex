@@ -50,7 +50,7 @@ public class RestApiServletTest extends AbstractTest {
 
 	@AfterClass
 	public static void afterClass() throws Exception {
-		//sr.shutDown();
+		sr.shutDown();
 	}
 
 	@Before

@@ -19,9 +19,6 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,20 +114,20 @@ public class RestApiServlet extends HttpServlet {
 		// でロードされたJDBCドライバのみ明示的にアンロードする
 		// ※この機能はREST APIのマッピングがある場合のみ有効
 		//===========================================================
-		ServletContext ctx = getServletContext();
-		try {
-			Enumeration<Driver> drivers = DriverManager.getDrivers();
-			while(drivers.hasMoreElements()) {
-				Driver d = drivers.nextElement();
-				if (d.getClass().getClassLoader() == getClass().getClassLoader()) {
-					// コンテキストクラスローダでロードされたものみアンロードする
-					DriverManager.deregisterDriver(d);
-					ctx.log("deregister driver [" + d.getClass().getName() + "] (from webapp classloader)");
-				}
-			}
-		} catch (Exception e) {
-			ctx.log("driver deregister error [" + e.getMessage() + "]", e);
-		}
+//		ServletContext ctx = getServletContext();
+//		try {
+//			Enumeration<Driver> drivers = DriverManager.getDrivers();
+//			while(drivers.hasMoreElements()) {
+//				Driver d = drivers.nextElement();
+//				if (d.getClass().getClassLoader() == getClass().getClassLoader()) {
+//					// コンテキストクラスローダでロードされたものみアンロードする
+//					DriverManager.deregisterDriver(d);
+//					ctx.log("deregister driver [" + d.getClass().getName() + "] (from webapp classloader)");
+//				}
+//			}
+//		} catch (Exception e) {
+//			ctx.log("driver deregister error [" + e.getMessage() + "]", e);
+//		}
 		//===========================================================
 
 		super.destroy();

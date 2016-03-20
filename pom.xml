@@ -15,7 +15,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<encoding>UTF-8</encoding>
 		<maven.test.skip>false</maven.test.skip>
-		<dryRun>false</dryRun>
+		<dryRun>true</dryRun>
 	</properties>
 
 	<licenses>
@@ -37,7 +37,7 @@
 			<id>bunjik</id>
 			<name>Fumiharu Kinoshita</name>
 			<email>kinoshita@bunji.info</email>
-			<url>https://github.com/bunjik/log4jdbcex</url>
+			<url>https://github.com/bunjik/</url>
 			<roles>
 				<role>architect</role>
 				<role>developer</role>

@@ -33,6 +33,11 @@ public abstract class AbstractTest {
 		InitialContext ic = new InitialContext();
 
 		try {
+			try {
+				Class.forName("org.h2.Driver");
+				Class.forName("info.bunji.jdbc.DriverEx");
+			} catch(Exception e) {}
+
 			ic.lookup("java:comp/env/jdbc");
 
 			// already initialized.

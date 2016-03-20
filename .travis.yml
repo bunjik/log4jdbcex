@@ -1,5 +1,4 @@
 language: java
 
 after_success:
-  - mvn clean cobertura:cobertura coveralls:report
- 
+  - mvn -DdryRun=false clean cobertura:cobertura coveralls:report [![Coverage Status](https://coveralls.io/repos/github/bunjik/log4jdbcex/badge.svg?branch=master)](https://coveralls.io/github/bunjik/log4jdbcex?branch=master)
