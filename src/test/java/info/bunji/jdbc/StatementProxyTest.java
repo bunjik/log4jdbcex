@@ -6,6 +6,7 @@ package info.bunji.jdbc;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
+import java.sql.BatchUpdateException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -130,6 +131,19 @@ public class StatementProxyTest extends AbstractTest {
 		int[] ret = stmt.executeBatch();
 		int[] val = { 1, 1 };
 		assertThat(ret, is(equalTo(val)));
+	}
+
+	/**
+	 * @throws Exception 意図しない例外
+	 */
+	@Test(expected=BatchUpdateException.class)
+	public void testAddBatchExecute3() throws Exception {
+		Statement stmt = conn.createStatement();
+		stmt.clearBatch();
+		stmt.addBatch("INSERT into test values('aaa')");
+		stmt.addBatch("INSERT into test values('bbb')");
+		stmt.addBatch("INSERT into unknown values('bbb')");
+		stmt.executeBatch();
 	}
 
 	/**

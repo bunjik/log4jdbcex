@@ -2,7 +2,6 @@
  *
  */
 package info.bunji.jdbc.rest;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
@@ -30,7 +29,6 @@ import com.meterware.servletunit.ServletUnitClient;
 
 import info.bunji.jdbc.AbstractTest;
 import net.arnx.jsonic.JSON;
-
 /**
  *
  * @author f.kinoshita
@@ -43,8 +41,8 @@ public class RestApiServletTest extends AbstractTest {
 	@BeforeClass
 	public static void beforeClass() throws Exception {
 		AbstractTest.setUpBeforeClass();
-		// register servlet mapping
 
+		// register servlet mapping
 		sr.registerServlet("log4jdbcex/*", RestApiServlet.class.getName());
 	}
 
@@ -92,6 +90,17 @@ public class RestApiServletTest extends AbstractTest {
 	}
 
 	@Test
+	public void testLastUpdate() throws Exception {
+
+		WebRequest req = new GetMethodWebRequest("http://localhost/log4jdbcex/ui/js/app.js");
+		WebResponse res = client.getResource(req);
+
+		req.setHeaderField("If-Modified-Since", res.getHeaderField("Last-Modified"));
+		res = client.getResponse(req);
+		assertThat(res.getResponseCode(), is(304));
+	}
+
+	@Test
 	public void testRedirect() throws Exception {
 		WebRequest req = new GetMethodWebRequest("http://localhost/log4jdbcex/ui");
 		WebResponse res = client.getResponse(req);
@@ -121,7 +130,20 @@ public class RestApiServletTest extends AbstractTest {
 		assertThat(values.containsKey("sql"), is(true));
 
 		// TODO:check values
+	}
 
+	@Test
+	public void testBroadcast() throws Exception {
+		WebRequest req = new GetMethodWebRequest("http://localhost/log4jdbcex/history");
+		req.setParameter("servers", "localhost:8080,127.0.0.1:8080");
+		req.setHeaderField("Cookie", "NAME1=cookieValue;");
+		WebResponse res = client.getResponse(req);
+
+		assertThat(res.getResponseCode(), is(HttpServletResponse.SC_OK));
+
+		Map<String, List<Map<String, Object>>> results = JSON.decode(res.getInputStream());
+
+		assertThat(results.containsKey("log4jdbcDs"), is(false));
 	}
 
 	@Test
