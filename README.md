@@ -1,6 +1,7 @@
+[![Maven Central](https://img.shields.io/maven-central/v/info.bunji/log4jdbcex.svg)]()
 [![Build Status](https://img.shields.io/travis/bunjik/log4jdbcex/master.svg)](https://travis-ci.org/bunjik/log4jdbcex)
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
-[![Coverage Status](https://coveralls.io/repos/github/bunjik/log4jdbcex/badge.svg?branch=master)](https://coveralls.io/github/bunjik/log4jdbcex?branch=master)
+[![Coverage Status](https://img.shields.io/coveralls/bunjik/log4jdbcex/master.svg)](https://coveralls.io/github/bunjik/log4jdbcex?branch=master)
 # log4jdbcEx
 
 ## 概要
@@ -48,5 +49,6 @@ Servlet3.0をサポートしたServetコンテナでは、web-fragment.xmlによ
 
 **http://host[:port]/contextName/log4jdbcex/**
 
+![screenshot](images/screenshot.png)
 
 **TBD**
