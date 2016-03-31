@@ -94,7 +94,7 @@ public class CommonsLoggingjdbcLoggerTest {
 	@Test
 	public void testWarnStringThrowable() {
 		try {
-			logger.warn("warn message", new Exception("testException"));
+			logger.warn("warn message", new Exception("Test Exception"));
 			logger.warn(null);
 		} catch(Exception e) {
 			fail();
@@ -120,7 +120,7 @@ public class CommonsLoggingjdbcLoggerTest {
 	@Test
 	public void testErrorStringThrowable() {
 		try {
-			logger.error("error message", new Exception("testException"));
+			logger.error("error message", new Exception("Test Exception"));
 			logger.error(null);
 		} catch(Exception e) {
 			fail();

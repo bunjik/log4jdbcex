@@ -25,7 +25,7 @@ import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -85,7 +85,7 @@ abstract class AbstractApi extends HttpServlet implements RestApi {
 	 * @param result merged result
 	 * @return modified merged result
 	 */
-	protected Map<String, Object> postMergeProcess(Map<String, Object> result) {
+	protected Map<String, List<Object>> postMergeProcess(Map<String, List<Object>> result) {
 		return result;
 	}
 
@@ -125,8 +125,8 @@ abstract class AbstractApi extends HttpServlet implements RestApi {
 	 * @param req
 	 * @return
 	 */
-	private Map<String, Object> broadcastRequest(HttpServletRequest req) {
-		Map<String, Object> resultMap = new TreeMap<String, Object>();
+	private Map<String, List<Object>> broadcastRequest(HttpServletRequest req) {
+		Map<String, List<Object>> resultMap = new TreeMap<String, List<Object>>();
 		String serversParam = req.getParameter("servers");
 		String[] servers = serversParam.split(",");
 
@@ -160,22 +160,25 @@ abstract class AbstractApi extends HttpServlet implements RestApi {
 		// Cookieの取得
 		Cookie[] cookies = req.getCookies();
 
+		// TODO:マルチスレッド対応
 		for (String s : sendList) {
 			try {
 				logger.trace("(" + method + ") " + s);
-				Map<String, Object> o = sendRequest(method, s, baos, cookies);
+				Map<String, List<Object>> o = sendRequest(method, s, baos, cookies);
 
 				// mapのマージ
-				for (Entry<String, Object> entry : o.entrySet()) {
+				for (Entry<String, List<Object>> entry : o.entrySet()) {
 					String key = entry.getKey();
 					if (!resultMap.containsKey(key)) {
 						resultMap.put(key, o.get(key));
 					} else {
-						if (o instanceof Collection) {
-							((Collection)resultMap.get(key)).addAll((Collection)o.get(key));
-						} else {
-							((Map)resultMap.get(key)).putAll((Map)o.get(key));
-						}
+						resultMap.get(key).addAll(o.get(key));
+//						if (o instanceof Collection) {
+//							((Collection)resultMap.get(key)).addAll((Collection)o.get(key));
+//						} else {
+//							// for SettingApi
+//							((Map)resultMap.get(key)).putAll((Map)o.get(key));
+//						}
 					}
 				}
 			} catch (Exception e) {
@@ -195,7 +198,7 @@ abstract class AbstractApi extends HttpServlet implements RestApi {
 	 * @param requestUrl
 	 * @return
 	 */
-	private Map<String, Object> sendRequest(String method, String requestUrl,
+	private Map<String, List<Object>> sendRequest(String method, String requestUrl,
 						ByteArrayOutputStream baos, Cookie[] cookies) throws Exception {
 
 		HttpURLConnection conn = null;

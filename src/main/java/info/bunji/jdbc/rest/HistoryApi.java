@@ -18,7 +18,7 @@ package info.bunji.jdbc.rest;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -58,9 +58,21 @@ class HistoryApi extends AbstractApi {
 
 			String host = hostName + ":" + req.getServerPort();
 
-			Map<String, Collection<QueryInfo>> tmpMap = new TreeMap<String, Collection<QueryInfo>>();
+			// response format
+			// {
+			//   jdbcurl1 : {
+			//     { time: xxx, elapsed: xxx, sql : "select xxxx", ... },
+			//     { time: xxx, elapsed: xxx, sql : "select xxxx", ... },
+			//     ...
+			//	 },
+			//   jdbcurl2 : {
+			//     { time: xxx, elapsed: xxx, sql : "select xxxx", ... },
+			//   ]
+			// }
+			//
+			Map<String, List<QueryInfo>> tmpMap = new TreeMap<String, List<QueryInfo>>();
 			for (JdbcLogger log : JdbcLoggerFactory.getLoggers()) {
-				Collection<QueryInfo> qiList = log.getHistory();
+				List<QueryInfo> qiList = log.getHistory();
 				for (QueryInfo qi : qiList) {
 					qi.setHost(host);
 				}
@@ -82,9 +94,9 @@ class HistoryApi extends AbstractApi {
 	 *
 	 */
 	@Override
-	protected Map<String, Object> postMergeProcess(Map<String, Object> result) {
+	protected Map<String, List<Object>> postMergeProcess(Map<String, List<Object>> result) {
 		// マージされたデータをソートし直す
-		for (Entry<String, Object> entry : result.entrySet()) {
+		for (Entry<String, List<Object>> entry : result.entrySet()) {
 			Object[] qiList = JSON.decode(JSON.encode(entry.getValue()), QueryInfo[].class);
 			Arrays.sort(qiList);
 			entry.setValue(Arrays.asList(qiList));

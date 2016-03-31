@@ -17,7 +17,9 @@ package info.bunji.jdbc.rest;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -57,12 +59,8 @@ class SettingApi extends AbstractApi {
 			bos = new BufferedOutputStream(res.getOutputStream());
 			res.setContentType("application/json; charset=UTF-8");
 
-			Map<String, Map<String, Object>> settings = getSettingData(req.getServerPort());
-			//long lastUpdate = 0L;
-			//for(Entry<String, Map<String, Object>> entry : settings.entrySet()) {
-			//	lastUpdate = Math.max((Long)entry.getValue().remove("lastUpdate"), lastUpdate);
-			//}
-			//res.setDateHeader("Last-modified", lastUpdate);
+			Map<String, List<Map<String, Object>>> settings =
+							getSettingData(req.getServerPort());
 
 			// format strings
 			JSON.encode(settings, bos, true);
@@ -79,22 +77,16 @@ class SettingApi extends AbstractApi {
  	protected void doPut(HttpServletRequest req, HttpServletResponse res)
 											throws ServletException, IOException {
 		@SuppressWarnings("unchecked")
-		Map<String,Map<String,Object>> setting = JSON.decode(req.getInputStream(), Map.class);
+		Map<String,List<Map<String,Object>>> setting = JSON.decode(req.getInputStream(), Map.class);
 
 			// 接続URL単位の処理
-		for(Entry<String,Map<String,Object>> entry : setting.entrySet()) {
+		for(Entry<String,List<Map<String,Object>>> entry : setting.entrySet()) {
 			String url = entry.getKey().toString();
 			JdbcLogger logger = JdbcLoggerFactory.getLogger(url);
 			if (logger != null) {
 				// 設定を反映
-				logger.setSetting((Map<String,Object>)entry.getValue());
+				logger.setSetting((Map<String,Object>)entry.getValue().get(0));
 			}
-//			if (JdbcLoggerFactory.hasLogger(url)) {
-//				JdbcLogger logger = JdbcLoggerFactory.getLogger(url);
-//				// 設定を反映
-//				//logger.debug("save :" + JSON.encode(entry.getValue()));
-//				logger.setSetting((Map<String,Object>)entry.getValue());
-//			}
 		}
 
 		// 更新後の設定情報を返す
@@ -103,10 +95,10 @@ class SettingApi extends AbstractApi {
 		res.setStatus(HttpServletResponse.SC_OK);
 	}
 
-	private Map<String, Map<String,Object>> getSettingData(int port) throws IOException {
-		Map<String, Map<String, Object>> jsonMap = new HashMap<String, Map<String, Object>>();
+	private Map<String, List<Map<String,Object>>> getSettingData(int port) throws IOException {
+		Map<String, List<Map<String,Object>>> jsonMap = new HashMap<String, List<Map<String,Object>>>();
 		for (JdbcLogger logger : JdbcLoggerFactory.getLoggers()) {
-			jsonMap.put(logger.getConnectUrl() , logger.getSetting());
+			jsonMap.put(logger.getConnectUrl() , Arrays.asList(logger.getSetting()));
 		}
 		return jsonMap;
 	}

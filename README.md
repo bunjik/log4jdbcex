@@ -1,4 +1,4 @@
-[![Maven Central](https://img.shields.io/maven-central/v/info.bunji/log4jdbcex.svg)]()
+[![Maven Central](https://img.shields.io/maven-central/v/info.bunji/log4jdbcex.svg)](http://mvnrepository.com/artifact/info.bunji/log4jdbcex)
 [![Build Status](https://img.shields.io/travis/bunjik/log4jdbcex/master.svg)](https://travis-ci.org/bunjik/log4jdbcex)
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 [![Coverage Status](https://img.shields.io/coveralls/bunjik/log4jdbcex/master.svg)](https://coveralls.io/github/bunjik/log4jdbcex?branch=master)

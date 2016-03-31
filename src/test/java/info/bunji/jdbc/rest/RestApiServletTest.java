@@ -59,9 +59,9 @@ public class RestApiServletTest extends AbstractTest {
 		client.getClientProperties().setMaxRedirects(3);
 
 		StringBuilder buf = new StringBuilder();
-		buf.append("{ 'log4jdbcDs': {")
+		buf.append("{ 'log4jdbcDs': [ {")
 			.append(" format: false")
-			.append("} }");
+			.append("} ] }");
 
 		WebRequest req = new PutMethodWebRequest(
 								"http://localhost/log4jdbcex/setting",
@@ -190,7 +190,8 @@ public class RestApiServletTest extends AbstractTest {
 		WebRequest req = new GetMethodWebRequest("http://localhost/log4jdbcex/setting");
 		WebResponse res = client.getResponse(req);
 
-		Map<String, Map<String, Object>> settings = JSON.decode(res.getInputStream());
+		Map<String, List<Map<String, Object>>> settings =
+									JSON.decode(res.getInputStream());
 		assertThat(settings.containsKey("log4jdbcDs"), is(true));
 
 		//"_default_": {
@@ -200,7 +201,7 @@ public class RestApiServletTest extends AbstractTest {
 		//	"historyCount": 30,
 		//	"format": true
 		//}
-		Map<String, Object> setting = settings.get("log4jdbcDs");
+		Map<String, Object> setting = settings.get("log4jdbcDs").get(0);
 		assertThat(setting, hasEntry("timeThreshold", (Object)BigDecimal.valueOf(0)));
 		assertThat(setting, hasEntry("acceptFilter", (Object)".*"));
 		assertThat(setting, hasEntry("ignoreFilter", null));
@@ -216,11 +217,11 @@ public class RestApiServletTest extends AbstractTest {
 		WebResponse res = client.getResponse(req);
 
 		StringBuilder buf = new StringBuilder();
-		buf.append("{ 'log4jdbcDs': {")
+		buf.append("{ 'log4jdbcDs': [{")
 			.append(" timeThreshold: 1,")
 			.append(" acceptFilter: '^SELECT',")
 			.append(" ignoreFilter: '^AAA'")
-			.append("} }");
+			.append("} ] }");
 
 		WebRequest putReq = new PutMethodWebRequest(
 								"http://localhost/log4jdbcex/setting",
@@ -228,9 +229,9 @@ public class RestApiServletTest extends AbstractTest {
 								"application/json; charset=UTF-8");
 		WebResponse putRes = client.getResponse(putReq);
 
-		Map<String,Map<String, Object>> settings = JSON.decode(putRes.getText());
+		Map<String,List<Map<String, Object>>> settings = JSON.decode(putRes.getText());
 
-		Map<String, Object> setting = settings.get("log4jdbcDs");
+		Map<String, Object> setting = settings.get("log4jdbcDs").get(0);
 		assertThat(setting, hasEntry("timeThreshold", (Object)BigDecimal.valueOf(1)));
 		assertThat(setting, hasEntry("acceptFilter", (Object)"^SELECT"));
 		assertThat(setting, hasEntry("ignoreFilter", (Object)"^AAA"));

@@ -18,12 +18,12 @@ package info.bunji.jdbc.logger.impl;
 import java.sql.BatchUpdateException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -362,7 +362,7 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	 * @see info.bunji.jdbc.logger.JdbcLogger#getRunningQueries()
 	 */
 	@Override
-	public Collection<QueryInfo> getRunningQueries() {
+	public List<QueryInfo> getRunningQueries() {
 		List<QueryInfo> activeQueries = new ArrayList<QueryInfo>();
 		synchronized (activeStatements) {
 			for (LoggerHelper helper : activeStatements) {
@@ -382,8 +382,8 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	 * @see info.bunji.jdbc.logger.JdbcLogger#getHistory()
 	 */
 	@Override
-	public Collection<QueryInfo> getHistory() {
-		Collection<QueryInfo> tmpList = new TreeSet<QueryInfo>();
+	public List<QueryInfo> getHistory() {
+		Set<QueryInfo> tmpList = new TreeSet<QueryInfo>();
 		if (isFormat) {
 			synchronized (queryHistory) {
 				for (QueryInfo qi : queryHistory) {
@@ -395,6 +395,6 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 		} else {
 			tmpList.addAll(queryHistory);
 		}
-		return tmpList;
+		return new ArrayList<QueryInfo>(tmpList);
 	}
 }

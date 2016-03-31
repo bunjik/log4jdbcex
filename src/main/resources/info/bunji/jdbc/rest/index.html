@@ -150,9 +150,9 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr ng-repeat="(key, value) in list">
+						<tr ng-repeat="(key, value) in list[0]">
 							<th class="text-right bg-info">{{ key }}</th>
-							<td><input type="text" class="form-control input-sm" ng-model="list[key]"></td>
+							<td><input type="text" class="form-control input-sm" ng-model="list[0][key]"></td>
 						</tr>
 					</tbody>
 				</table>

@@ -15,7 +15,7 @@
  */
 package info.bunji.jdbc.logger;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import info.bunji.jdbc.LoggerHelper;
@@ -160,11 +160,11 @@ public interface JdbcLogger {
 	 * get executing sql info list.
 	 * @return query list
 	 */
-	public Collection<QueryInfo> getRunningQueries();
+	public List<QueryInfo> getRunningQueries();
 
 	/**
 	 * get executed sql info list.
 	 * @return query list
 	 */
-	public Collection<QueryInfo> getHistory();
+	public List<QueryInfo> getHistory();
 }

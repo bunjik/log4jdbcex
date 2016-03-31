@@ -200,12 +200,14 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 			} else if (name.equals("clearParameters")){
 				clearParameterList();
 			} else if (name.equals("registerOutParameter")){
-				// registerOutParameter(int parameterIndex, int sqlType);
-				// registerOutParameter(String parameterName, int sqlType);
-				// TODO:要実装
-				// addParameter(getParameterIndex(parameterName), sqlType, "(OUT)");
-				// addParameter(parameterIndex, sqlType, "(OUT)");
-
+				int sqlType = (Integer) args[1];
+				if (args[0] instanceof String) {
+					String parameterName = (String) args[0];
+					addParameter(getParameterIndex(parameterName), sqlType, "(OUT)");
+				} else {
+					Integer parameterIndex = (Integer) args[0];
+					addParameter(parameterIndex, sqlType, "(OUT)");
+				}
 			} else if (name.equals("getConnection")){
 				// 取得したConnectionをラップする
 				ret = ProxyFactory.wrapConnection((Connection)ret, url);
