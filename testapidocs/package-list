@@ -1,3 +1,5 @@
 info.bunji.jdbc
+info.bunji.jdbc.logger.impl
 info.bunji.jdbc.rest
+info.bunji.jdbc.specifics
 info.bunji.jdbc.util
