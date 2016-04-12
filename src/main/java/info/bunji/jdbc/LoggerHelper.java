@@ -241,29 +241,6 @@ public abstract class LoggerHelper {
 		_paramList.add(ParameterInfo.create(type, name, value));
 	}
 
-//	String getParameters() {
-//		StringBuilder buf = new StringBuilder();
-//		if (_paramList == null | _paramList.isEmpty()) {
-//			return "";
-//		}
-//		for (ParameterInfo p : _paramList) {
-//			buf.append(", ");
-//			if (p == null) {
-//				buf.append("NULL");
-//			} else {
-//				if (p.getName() != null) {
-//					buf.append(p.getName()).append("=");
-//				}
-//				buf.append(p.getValue());
-//			}
-//		}
-//		return buf.substring(2);
-//	}
-
-//	JdbcLogger getLogger() {
-//		return logger;
-//	}
-
 	/**
 	 * get uniqu queryid.
 	 *

@@ -237,7 +237,7 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 						} else {
 							debug(RETURN_MSG_FORMAT, elapsed, sql);
 						}
-						queryHistory.add(new QueryInfo(helper.getStartTime(), elapsed, sql));
+						queryHistory.add(new QueryInfo(helper.getStartTime(), elapsed, sql, helper.getQueryId()));
 					}
 				} else if (helper.getBatchList() != null) {
 					// バッチ実行の場合
@@ -250,7 +250,7 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 							} else {
 								debug(BATCH_MSG_FORMAT, i, cnt, sql);
 							}
-							queryHistory.add(new QueryInfo(helper.getStartTime(), -1L, sql));
+							queryHistory.add(new QueryInfo(helper.getStartTime(), -1L, sql, helper.getQueryId()));
 						}
 						i++;
 					}
@@ -285,7 +285,7 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 							}
 						} else {
 							// エラー時は条件にかかわらず出力
-							error(String.format(BATCH_MSG_FORMAT, i + 1, list.size(), sql));
+							error(String.format(BATCH_MSG_FORMAT, i + 1, list.size(), sql, helper.getQueryId()));
 						}
 					}
 					debug(BATCH_RESULT_FORMAT, elapsed, ret.length, ret.length);

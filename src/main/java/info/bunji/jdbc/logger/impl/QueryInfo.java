@@ -46,10 +46,18 @@ public class QueryInfo implements Cloneable, Comparable<QueryInfo> {
 	}
 
 	QueryInfo(Long time, Long elapsed, String sql, String queryId) {
+		this(time, elapsed, sql, queryId, null);
+	}
+
+	QueryInfo(Long time, Long elapsed, String sql, String queryId, Throwable t) {
 		this.time = time;
 		this.elapsed = elapsed;
 		this.sql = sql;
 		this.queryId = queryId;
+		if (t != null) {
+			this.isError = true;
+			this.errorMsg = t.getMessage();
+		}
 	}
 
 	public void setTime(Long time) { this.time = time; }
