@@ -24,6 +24,8 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import info.bunji.jdbc.logger.JdbcLoggerFactory;
+
 /**
  **********************************************************
  * implements Driver Wrapper.
@@ -53,7 +55,13 @@ public class DriverProxy implements InvocationHandler {
 				Driver d = getRealDriver((String) args[0]);
 				if (d == null) return null;
 				args[0] = getRealUrl((String)args[0]);
-				return ProxyFactory.wrapConnection((Connection)method.invoke(d, args), (String)args[0]);
+
+				Connection conn = (Connection)method.invoke(d, args);
+				if (JdbcLoggerFactory.getLogger().isJdbcLoggingEnabled()) {
+					// wrapping connection
+					conn = ProxyFactory.wrapConnection(conn, (String)args[0]);
+				}
+				return conn;
 			} else if (name.equals("getPropertyInfo")) {
 				Driver d = getRealDriver((String)args[0]);
 				return d.getPropertyInfo(getRealUrl((String)args[0]), (Properties) args[1]);

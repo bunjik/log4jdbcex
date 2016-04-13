@@ -144,32 +144,34 @@ public class RestApiServlet extends HttpServlet {
 	protected void service(HttpServletRequest req, HttpServletResponse res)
 			throws ServletException, IOException {
 
-		String pathInfo = req.getPathInfo();
-		if (pathInfo == null) pathInfo = "/";
+		// ロギング対象の接続設定がある場合のみ処理する（セキュリティ対策)
+		if (!JdbcLoggerFactory.hasValidLogger()) {
+			String pathInfo = req.getPathInfo();
+			if (pathInfo == null) pathInfo = "/";
 
-		// API名及びパラメータを抽出
-		// [0] empty
-		// [1] api名
-		// [2] api名以降のURI
-		String[] params = pathInfo.split("/", 3);
-		if (params.length > 1) {
-			if (!params[1].isEmpty()) {
-				req.setAttribute("API_PATH", params.length > 2 ? params[2] : null);
-				RestApi api = apiMap.get(params[1]);
-				if (api != null) {
-					// 対象が見つかった場合、処理を委譲する
-					api.service(req, res);
-					return;
+			// API名及びパラメータを抽出
+			// [0] empty
+			// [1] api名
+			// [2] api名以降のURI
+			String[] params = pathInfo.split("/", 3);
+			if (params.length > 1) {
+				if (!params[1].isEmpty()) {
+					req.setAttribute("API_PATH", params.length > 2 ? params[2] : null);
+					RestApi api = apiMap.get(params[1]);
+					if (api != null) {
+						// 対象が見つかった場合、処理を委譲する
+						api.service(req, res);
+						return;
+					}
+				} else {
+					// API未指定時
+					String uri = req.getRequestURI();
+					if (!uri.endsWith("/")) uri += "/";
+					res.sendRedirect(uri + "ui/");
 				}
-			} else {
-				// API未指定時
-				String uri = req.getRequestURI();
-				if (!uri.endsWith("/")) uri += "/";
-				res.sendRedirect(uri + "ui/");
 			}
 		}
-
-		// 対象のAPIが見つからない場合
+		// ロギング対象がないか、対象のAPIが見つからない場合は404を返す
 		res.setStatus(HttpServletResponse.SC_NOT_FOUND);
 	}
 }

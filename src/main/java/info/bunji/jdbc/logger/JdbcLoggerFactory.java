@@ -141,6 +141,9 @@ public class JdbcLoggerFactory {
 	private JdbcLoggerFactory() {
 		// 利用するLoggerを決定する
 		constructor = getLoggerConstructor();
+
+		// init default logger
+		getLogger(DEFAULT_LOGGER);
 	}
 
 	/**
@@ -251,6 +254,16 @@ public class JdbcLoggerFactory {
 	 */
 	private static boolean hasLogger(String url) {
 		return loggerCache.containsKey(getLoggerName(url));
+	}
+
+	/**
+	 ********************************************
+	 * hss valid loggger (exclude default logger)
+	 * @return
+	 ********************************************
+	 */
+	public static boolean hasValidLogger() {
+		return loggerCache.size() > 1;
 	}
 
 	/**

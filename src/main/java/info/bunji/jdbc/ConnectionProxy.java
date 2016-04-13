@@ -52,8 +52,7 @@ public class ConnectionProxy extends LoggerHelper implements InvocationHandler {
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		try {
-			// Connection pooling環境で動的にログレベルを変えるためには
-			// Ststementで制御すべき
+			// TODO:Connection pooling環境で動的にログレベルを変えるためにはStatementで制御すべき
 			if (!JdbcLoggerFactory.getLogger().isJdbcLoggingEnabled()) {
 				return method.invoke(_conn, args);
 			}
