@@ -6,8 +6,11 @@ package info.bunji.jdbc.logger.impl;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.LogManager;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -23,8 +26,14 @@ public class JdkdbcLoggerTest {
 	private JdbcLogger logger;
 
 	@Before
-	public void beforeClass() {
+	public void beforeClass() throws SecurityException, IOException {
+		InputStream is = JdkdbcLoggerTest.class.getResourceAsStream("/logging.properties");
+		LogManager.getLogManager().readConfiguration(is);
+		is.close();
+
 		logger = new JdkJdbcLogger("testLogger");
+
+
 	}
 
 	/**
@@ -54,7 +63,7 @@ public class JdkdbcLoggerTest {
 	@Test
 	public void testDebug() {
 		try {
-			logger.debug("debug message[{}]", "param1");
+			logger.debug("debug message[%s]", "param1");
 			logger.debug("debug message");
 			logger.debug(null);
 		} catch(Exception e) {
@@ -94,7 +103,9 @@ public class JdkdbcLoggerTest {
 	@Test
 	public void testWarnStringThrowable() {
 		try {
-			logger.warn("warn message", new Exception("testException"));
+			Throwable t = new Exception("testException");
+			t.setStackTrace(new StackTraceElement[0]);
+			logger.warn("warn message", t);
 			logger.warn(null);
 		} catch(Exception e) {
 			fail();
@@ -120,7 +131,9 @@ public class JdkdbcLoggerTest {
 	@Test
 	public void testErrorStringThrowable() {
 		try {
-			logger.error("error message", new Exception("testException"));
+			Throwable t = new Exception("testException");
+			t.setStackTrace(new StackTraceElement[0]);
+			logger.error("error message", t);
 			logger.error(null);
 		} catch(Exception e) {
 			fail();

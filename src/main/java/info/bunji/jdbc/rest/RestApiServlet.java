@@ -145,7 +145,7 @@ public class RestApiServlet extends HttpServlet {
 			throws ServletException, IOException {
 
 		// ロギング対象の接続設定がある場合のみ処理する（セキュリティ対策)
-		if (!JdbcLoggerFactory.hasValidLogger()) {
+		if (JdbcLoggerFactory.hasValidLogger()) {
 			String pathInfo = req.getPathInfo();
 			if (pathInfo == null) pathInfo = "/";
 

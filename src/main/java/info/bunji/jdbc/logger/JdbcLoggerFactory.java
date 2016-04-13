@@ -141,9 +141,6 @@ public class JdbcLoggerFactory {
 	private JdbcLoggerFactory() {
 		// 利用するLoggerを決定する
 		constructor = getLoggerConstructor();
-
-		// init default logger
-		getLogger(DEFAULT_LOGGER);
 	}
 
 	/**

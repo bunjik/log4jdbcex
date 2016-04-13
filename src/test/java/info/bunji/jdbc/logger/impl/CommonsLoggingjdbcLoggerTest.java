@@ -54,7 +54,7 @@ public class CommonsLoggingjdbcLoggerTest {
 	@Test
 	public void testDebug() {
 		try {
-			logger.debug("debug message[{}]", "param1");
+			logger.debug("debug message[%s]", "param1");
 			logger.debug("debug message");
 			logger.debug(null);
 		} catch(Exception e) {
@@ -94,7 +94,9 @@ public class CommonsLoggingjdbcLoggerTest {
 	@Test
 	public void testWarnStringThrowable() {
 		try {
-			logger.warn("warn message", new Exception("Test Exception"));
+			Throwable t = new Exception("testException");
+			t.setStackTrace(new StackTraceElement[0]);
+			logger.warn("warn message", t);
 			logger.warn(null);
 		} catch(Exception e) {
 			fail();
@@ -120,7 +122,9 @@ public class CommonsLoggingjdbcLoggerTest {
 	@Test
 	public void testErrorStringThrowable() {
 		try {
-			logger.error("error message", new Exception("Test Exception"));
+			Throwable t = new Exception("testException");
+			t.setStackTrace(new StackTraceElement[0]);
+			logger.error("error message", t);
 			logger.error(null);
 		} catch(Exception e) {
 			fail();
