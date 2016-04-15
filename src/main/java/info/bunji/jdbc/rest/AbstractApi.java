@@ -25,12 +25,14 @@ import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -159,12 +161,24 @@ abstract class AbstractApi extends HttpServlet implements RestApi {
 
 		// Cookieの取得
 		Cookie[] cookies = req.getCookies();
+		StringBuilder cookieBuf = new StringBuilder();
+		if (cookies != null && cookies.length > 0) {
+			for (Cookie cookie : cookies) {
+				cookieBuf.append(cookie.getName()).append("=").append(cookie.getValue());
+				cookieBuf.append("; ");
+				if (cookie.getPath() != null) cookieBuf.append("PATH=").append(cookie.getPath());
+			}
+			logger.trace("Cookie:" + cookieBuf.toString());
+		}
 
 		// TODO:マルチスレッド対応
 		for (String s : sendList) {
 			try {
 				logger.trace("(" + method + ") " + s);
-				Map<String, List<Object>> o = sendRequest(method, s, baos, cookies);
+
+				// とりあえず同期呼び出し
+				InternalRequest r = new InternalRequest(method, s, baos.toByteArray(), cookieBuf.toString());
+				Map<String, List<Object>> o = r.call();
 
 				// mapのマージ
 				for (Entry<String, List<Object>> entry : o.entrySet()) {
@@ -173,12 +187,6 @@ abstract class AbstractApi extends HttpServlet implements RestApi {
 						resultMap.put(key, o.get(key));
 					} else {
 						resultMap.get(key).addAll(o.get(key));
-//						if (o instanceof Collection) {
-//							((Collection)resultMap.get(key)).addAll((Collection)o.get(key));
-//						} else {
-//							// for SettingApi
-//							((Map)resultMap.get(key)).putAll((Map)o.get(key));
-//						}
 					}
 				}
 			} catch (Exception e) {
@@ -189,15 +197,74 @@ abstract class AbstractApi extends HttpServlet implements RestApi {
 	}
 
 	/**
-	 * 指定されたURLにリクエストを送信する
-	 *
-	 * ※REST APIを想定しているため、元のリクエストに付与された
-	 * パラメータは送信されません
-	 *
-	 * @param method
-	 * @param requestUrl
-	 * @return
+	 * スレッドでリクエストを発行するためのクラス
 	 */
+	class InternalRequest implements Callable<Object> {
+		private String url;
+		private String method;
+		private byte[] body;
+		private String cookies;
+
+		public InternalRequest(String method, String url, byte[] body, String cookies) {
+			this.url = url;
+			this.method = method;
+			this.body = body;
+			this.cookies = cookies;
+		}
+
+		/**
+		 * 指定されたURLにリクエストを送信する
+		 *
+		 * ※REST APIを想定しているため、元のリクエストに付与された
+		 * パラメータは送信されません
+		 *
+		 * @param method
+		 * @param requestUrl
+		 * @return
+		 */
+		@Override
+		public Map<String, List<Object>> call() throws Exception {
+			HttpURLConnection conn = null;
+			OutputStream os = null;
+			InputStream is = null;
+			try {
+				URL requestUrl = new URL(url);
+
+				// 接続情報を設定する
+				conn = (HttpURLConnection) requestUrl.openConnection();
+				conn.setRequestMethod(method);
+				// cookieが指定されていたら、送信ヘッダに追加する
+				if (cookies != null && cookies.length() > 0) {
+					conn.setRequestProperty("Cookie", cookies);
+				}
+				// 転送先で再送が起こらないようヘッダを付与する?
+				//conn.setRequestProperty("X-Transfered", "true");
+				// タイムアウトの設定
+				conn.setConnectTimeout(3000);
+				conn.setReadTimeout(3000);
+
+				// 接続
+				if (body != null && body.length > 0) {
+					conn.setDoOutput(true);
+					os = conn.getOutputStream();
+					os.write(body);
+					os.flush();
+				} else {
+					conn.connect();
+				}
+				is = conn.getInputStream();
+				return JSON.decode(is);
+			} catch (Exception e) {
+				logger.debug(e.toString(), e);
+				return Collections.emptyMap();
+			} finally {
+				closeQuietly(os);
+				closeQuietly(is);
+				if (conn != null) conn.disconnect();
+			}
+		}
+	}
+
 	private Map<String, List<Object>> sendRequest(String method, String requestUrl,
 						ByteArrayOutputStream baos, Cookie[] cookies) throws Exception {
 
