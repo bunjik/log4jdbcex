@@ -21,7 +21,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -32,6 +34,7 @@ import info.bunji.jdbc.logger.JdbcLogger;
 import info.bunji.jdbc.logger.JdbcLoggerFactory;
 import info.bunji.jdbc.logger.impl.QueryInfo;
 import net.arnx.jsonic.JSON;
+import net.arnx.jsonic.TypeReference;
 
 /**
  *
@@ -100,9 +103,8 @@ class RunningQueriesApi extends AbstractApi {
 	protected Map<String, List<Object>> postMergeProcess(Map<String, List<Object>> result) {
 		// マージされたデータをソートし直す
 		for (Entry<String, List<Object>> entry : result.entrySet()) {
-			Object[] qiList = JSON.decode(JSON.encode(entry.getValue()), QueryInfo[].class);
-			Arrays.sort(qiList);
-			entry.setValue(Arrays.asList(qiList));
+			Set<QueryInfo> qiSet = JSON.decode(JSON.encode(entry.getValue()), new TypeReference<TreeSet<QueryInfo>>(){});
+			entry.setValue(Arrays.asList(qiSet.toArray()));
 		}
 		return result;
 	}

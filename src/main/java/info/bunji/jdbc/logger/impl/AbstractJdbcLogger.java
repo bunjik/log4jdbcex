@@ -294,7 +294,8 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 					long now = System.currentTimeMillis();
 					long elapsed = now - helper.getStartTime();
 					error(String.format(EXCEPTION_MSG_FORMAT, elapsed, sql), t);
-					queryHistory.add(new QueryInfo(helper.getStartTime(), elapsed, sql, t));
+					//queryHistory.add(new QueryInfo(helper.getStartTime(), elapsed, sql, helper.getQueryId(), t));
+					queryHistory.add(new QueryInfo(helper, sql, t));
 				}
 			}
 		} catch (Throwable e) {

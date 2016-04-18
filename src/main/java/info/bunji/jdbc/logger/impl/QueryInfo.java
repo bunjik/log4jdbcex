@@ -15,6 +15,8 @@
  */
 package info.bunji.jdbc.logger.impl;
 
+import info.bunji.jdbc.LoggerHelper;
+
 /**
  *
  * @author f.kinoshita
@@ -33,16 +35,8 @@ public class QueryInfo implements Cloneable, Comparable<QueryInfo> {
 		// do nothing.
 	}
 
-	QueryInfo(Long time, Long elapsed, String sql) {
-		this(time, elapsed, sql, (String) null);
-	}
-
-	QueryInfo(Long time, Long elapsed, String sql, Throwable t) {
-		this(time, elapsed, sql);
-		if (t != null) {
-			this.isError = true;
-			this.errorMsg = t.getMessage();
-		}
+	QueryInfo(LoggerHelper helper, String sql, Throwable t) {
+		this(helper.getStartTime(), System.currentTimeMillis() - helper.getStartTime(), sql, helper.getQueryId(), t);
 	}
 
 	QueryInfo(Long time, Long elapsed, String sql, String queryId) {
@@ -79,7 +73,12 @@ public class QueryInfo implements Cloneable, Comparable<QueryInfo> {
 
 	@Override
 	public int compareTo(QueryInfo o) {
-		return (int)(o.getTime() - time);
+		int ret = 0;
+		ret = (int)(o.getTime() - time);
+		if (ret == 0) {
+			ret = queryId.compareTo(o.getId());
+		}
+		return ret;
 	}
 
 	@Override

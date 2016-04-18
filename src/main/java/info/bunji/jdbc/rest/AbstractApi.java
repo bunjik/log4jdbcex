@@ -25,6 +25,7 @@ import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,10 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -48,7 +53,6 @@ import net.arnx.jsonic.JSON;
 /**
  *
  * @author f.kinoshita
- *
  */
 abstract class AbstractApi extends HttpServlet implements RestApi {
 
@@ -57,6 +61,8 @@ abstract class AbstractApi extends HttpServlet implements RestApi {
 	protected final String hostName;
 
 	protected ServletContext context;
+
+	private final ExecutorService executor;
 
 	public AbstractApi(ServletContext context) {
 		this.context = context;
@@ -68,6 +74,8 @@ abstract class AbstractApi extends HttpServlet implements RestApi {
 			e.printStackTrace();
 		}
 		hostName = (ia != null ? ia.getHostName() : "unknownHost");
+
+		executor = Executors.newCachedThreadPool();
 	}
 
 	/**
@@ -119,6 +127,12 @@ abstract class AbstractApi extends HttpServlet implements RestApi {
 	 */
 	@Override
 	public void destroy() {
+		try {
+			executor.shutdownNow();
+			executor.awaitTermination(10, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			// do nothing.
+		}
 		super.destroy();
 	}
 
@@ -161,24 +175,31 @@ abstract class AbstractApi extends HttpServlet implements RestApi {
 
 		// Cookieの取得
 		Cookie[] cookies = req.getCookies();
-		StringBuilder cookieBuf = new StringBuilder();
+		String cookieStr = null;
 		if (cookies != null && cookies.length > 0) {
+			StringBuilder cookieBuf = new StringBuilder();
 			for (Cookie cookie : cookies) {
 				cookieBuf.append(cookie.getName()).append("=").append(cookie.getValue());
 				cookieBuf.append("; ");
 				if (cookie.getPath() != null) cookieBuf.append("PATH=").append(cookie.getPath());
 			}
-			logger.trace("Cookie:" + cookieBuf.toString());
+			cookieStr = cookieBuf.toString();
+			logger.trace("Cookie:" + cookieStr);
 		}
 
-		// TODO:マルチスレッド対応
+		List<Future<Map<String, List<Object>>>> futures = new ArrayList<Future<Map<String, List<Object>>>>();
 		for (String s : sendList) {
 			try {
 				logger.trace("(" + method + ") " + s);
+				futures.add(executor.submit(new InternalRequest(method, s, baos.toByteArray(), cookieStr)));
+			} catch (Exception e) {
+				logger.warn(e.toString(), e);
+			}
+		}
 
-				// とりあえず同期呼び出し
-				InternalRequest r = new InternalRequest(method, s, baos.toByteArray(), cookieBuf.toString());
-				Map<String, List<Object>> o = r.call();
+		for (Future<Map<String, List<Object>>> f : futures) {
+			try {
+				Map<String, List<Object>> o = f.get();
 
 				// mapのマージ
 				for (Entry<String, List<Object>> entry : o.entrySet()) {
@@ -199,7 +220,7 @@ abstract class AbstractApi extends HttpServlet implements RestApi {
 	/**
 	 * スレッドでリクエストを発行するためのクラス
 	 */
-	class InternalRequest implements Callable<Object> {
+	class InternalRequest implements Callable<Map<String, List<Object>>> {
 		private String url;
 		private String method;
 		private byte[] body;
@@ -262,55 +283,6 @@ abstract class AbstractApi extends HttpServlet implements RestApi {
 				closeQuietly(is);
 				if (conn != null) conn.disconnect();
 			}
-		}
-	}
-
-	private Map<String, List<Object>> sendRequest(String method, String requestUrl,
-						ByteArrayOutputStream baos, Cookie[] cookies) throws Exception {
-
-		HttpURLConnection conn = null;
-		OutputStream os = null;
-		InputStream is = null;
-		try {
-			URL url = new URL(requestUrl);
-
-			// 接続情報を設定する
-			conn = (HttpURLConnection) url.openConnection();
-			conn.setRequestMethod(method);
-
-			// cookieが指定されていたら、送信ヘッダに追加する
-			if (cookies != null && cookies.length > 0) {
-				StringBuilder cookieBuf = new StringBuilder();
-				for (Cookie cookie : cookies) {
-					cookieBuf.append(cookie.getName()).append("=").append(cookie.getValue());
-					cookieBuf.append("; ");
-					if (cookie.getPath() != null) cookieBuf.append("PATH=").append(cookie.getPath());
-				}
-				logger.trace("Cookie:" + cookieBuf.toString());
-
-				// 元のリクエストに付与されているcookie情報をヘッダに設定する
-				conn.setRequestProperty("Cookie", cookieBuf.toString());
-			}
-
-			// 転送先で再送が起こらないようヘッダを付与する?
-			//conn.setRequestProperty("X-Transfered", "true");
-			conn.setConnectTimeout(5000);
-
-			// 接続
-			if (baos.size() > 0) {
-				conn.setDoOutput(true);
-				os = conn.getOutputStream();
-				baos.writeTo(os);
-				os.flush();
-			} else {
-				conn.connect();
-			}
-			is = conn.getInputStream();
-			return JSON.decode(is);
-		} finally {
-			closeQuietly(os);
-			closeQuietly(is);
-			if (conn != null) conn.disconnect();
 		}
 	}
 
