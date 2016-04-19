@@ -23,8 +23,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 
-import info.bunji.jdbc.logger.JdbcLoggerFactory;
-
 /**
  **********************************************************
  * implements Connection Wrapper.
@@ -53,9 +51,9 @@ public class ConnectionProxy extends LoggerHelper implements InvocationHandler {
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		try {
 			// TODO:Connection pooling環境で動的にログレベルを変えるためにはStatementで制御すべき
-			if (!JdbcLoggerFactory.getLogger().isJdbcLoggingEnabled()) {
-				return method.invoke(_conn, args);
-			}
+			//if (!JdbcLoggerFactory.getLogger().isJdbcLoggingEnabled()) {
+			//	return method.invoke(_conn, args);
+			//}
 
 			Object ret;
 			String name = method.getName();
@@ -68,12 +66,18 @@ public class ConnectionProxy extends LoggerHelper implements InvocationHandler {
 			} else if (name.equals("prepareCall")) {
 				CallableStatement stmt = (CallableStatement) method.invoke(_conn, args);
 				ret = ProxyFactory.wrapCallableStatement(stmt, url, args[0].toString());
+			} else if (name.equals("close") && isConnectionLogging()) {
+				startExecute("close connection.");
+				ret = method.invoke(_conn, args);
+				reportReturned();
 			} else {
 				ret = method.invoke(_conn, args);
 			}
 			return ret;
 		} catch (InvocationTargetException e) {
 			throw e.getCause();
+		} finally {
+endExecute();
 		}
 	}
 }

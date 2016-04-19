@@ -58,21 +58,14 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	/** ログ出力時の最大文字数(デフォルト:無制限[-1]) */
 	int limitLength = -1;
 
+	/** コネクション取得・切断時のロギング(デフォルト:false) */
+	boolean isConnectionLogging = false;
+
 	/** このLoggerインスタンスが出力対象とする接続URL */
 	String connectUrl;
 
 	/** 実行履歴の保持件数(接続URL単位) */
 	int historyCount = 50;
-
-	private static final String RETURN_MSG_FORMAT = "[executed %,4d ms] %s";
-
-	private static final String BATCH_MSG_FORMAT = "[executed (%d/%d)] %s";
-
-	private static final String BATCH_RESULT_FORMAT = "[batch finished %,4d ms] (%d/%d)";
-
-	private static final String EXCEPTION_MSG_FORMAT = "[executed %,4d ms] %s";
-
-	//private static final String RUNNING_MSG_FORMAT = "Running [elapsed %,4d ms] %s";
 
 	private final RdbmsSpecifics specifics;
 
@@ -116,6 +109,16 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 			loggerName += "." + url;
 		}
 		return loggerName;
+	}
+
+	/*
+	 * (非 Javadoc)
+	 * @see info.bunji.jdbc.logger.JdbcLogger#isConnectionLogging()
+	 */
+	@Override
+	public boolean isConnectionLogging() {
+		boolean ret = isJdbcLoggingEnabled();
+		return ret ? isConnectionLogging : ret;
 	}
 
 	/*
@@ -317,6 +320,7 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 		statusMap.put("historyCount", historyCount);
 		statusMap.put("format",       isFormat);
 		statusMap.put("limitLength",  limitLength);
+		statusMap.put("connectionLogging",  isConnectionLogging);
 		//statusMap.put("lastUpdate",   lastUpdate);
 
 		return statusMap;
@@ -348,6 +352,8 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 				} else if (key.equalsIgnoreCase("limitLength")) {
 					int val = Integer.parseInt(value.toString());
 					limitLength = (val > 0 ? val : -1);
+				} else if (key.equalsIgnoreCase("connectionLogging")) {
+					isConnectionLogging = Boolean.valueOf(value.toString());
 				}
 			} catch (Exception e) {
 				System.out.println(String.format("[%s=%s] setting error.(%s)",

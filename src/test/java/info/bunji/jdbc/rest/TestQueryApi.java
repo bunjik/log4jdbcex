@@ -75,7 +75,7 @@ class TestQueryApi extends AbstractApi {
 			for (Connection conn : connList) {
 				try {
 					stmt = conn.createStatement();
-					stmt.execute("create table test(aaa int)");
+					stmt.execute("create table if not exists test(aaa int)");
 				} catch (Exception e) {
 					// do nothing.
 				} finally {

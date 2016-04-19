@@ -76,18 +76,23 @@ SQLのログ自体は、ロガー名：**jdbclog**のDEBUGレベルで出力さ�
 	最大長を超えた部分は省略して表示されます。  
 	未指定時のデフォルトは、**-1**(制限なし)です。  
 
+* connectionLogging (since:0.3.4)  
+	Connectionの取得、クローズ時にログを出力します。  
+	未指定時のデフォルトは、**false**(出力しない)です。  
+
 *※SQLでエラーが発生した場合は、上記設定に関わらず、ERRORレベルでのログ出力が行われます。*
 
 ### 設定ファイル例:  
 
         {  
         	"_default_": {  
-        		"timeThreshold": 0,  
-        		"acceptFilter": ".*",  
-        		"ignoreFilter": "SELECT 1",  
-        		"historyCount": 30,  
-        		"format": true,
-        		"limitLength": 500  
+        		timeThreshold : 0,  
+        		acceptFilter : ".*",  
+        		ignoreFilter : "SELECT 1",  
+        		historyCount : 30,  
+        		format : true,
+        		limitLength : 500,  
+        		connectionLogging : false  
         	},
         	"sampleJndi":  {  
         		"timeThreshold": 1000

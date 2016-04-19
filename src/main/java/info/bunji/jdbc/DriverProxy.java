@@ -24,6 +24,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
+import info.bunji.jdbc.logger.JdbcLogger;
 import info.bunji.jdbc.logger.JdbcLoggerFactory;
 
 /**
@@ -38,7 +39,7 @@ public class DriverProxy implements InvocationHandler {
 	/** real Connection */
 	private Driver realDriverLast;
 
-	private final static Driver DRIVER_EX = new DriverEx();
+	private static final Driver DRIVER_EX = new DriverEx();
 
 	/*
 	 * (非 Javadoc)
@@ -56,10 +57,24 @@ public class DriverProxy implements InvocationHandler {
 				if (d == null) return null;
 				args[0] = getRealUrl((String)args[0]);
 
-				Connection conn = (Connection)method.invoke(d, args);
-				if (JdbcLoggerFactory.getLogger().isJdbcLoggingEnabled()) {
-					// wrapping connection
-					conn = ProxyFactory.wrapConnection(conn, (String)args[0]);
+				Connection conn = null;
+				JdbcLogger logger = JdbcLoggerFactory.getLogger((String)args[0]);
+				if (logger.isJdbcLoggingEnabled()) {
+					long start = System.currentTimeMillis();
+					try {
+						conn = ProxyFactory.wrapConnection((Connection) method.invoke(d, args), (String)args[0]);
+						if (logger.isConnectionLogging()) {
+							logger.debug(String.format(JdbcLogger.RETURN_MSG_FORMAT, System.currentTimeMillis() - start, "get connection."));
+						}
+					} catch (Throwable t) {
+						if (logger.isConnectionLogging()) {
+							logger.error(String.format(JdbcLogger.EXCEPTION_MSG_FORMAT, System.currentTimeMillis() - start, "get connection.", t.getCause()));
+						}
+						throw t;
+					}
+				} else {
+					// get real connection
+					conn = (Connection)method.invoke(d, args);
 				}
 				return conn;
 			} else if (name.equals("getPropertyInfo")) {

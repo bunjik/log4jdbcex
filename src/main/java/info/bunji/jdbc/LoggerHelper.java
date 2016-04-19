@@ -79,6 +79,17 @@ public abstract class LoggerHelper {
 
 	/**
 	 ********************************************
+	 * get connection logging status
+	 *
+	 * @return if logging enabled true, other false
+	 ********************************************
+	 */
+	protected boolean isConnectionLogging() {
+		return logger.isConnectionLogging();
+	}
+
+	/**
+	 ********************************************
 	 * クエリの開始時に呼び出すメソッド.
 	 *
 	 * 実行中クエリのキューに自身を登録するとともに、開始時間を記録する
@@ -291,7 +302,7 @@ public abstract class LoggerHelper {
 
 		public String getName() { return name; }
 
-		//public int getType() { return type; }
+		public int getType() { return type; }
 
 		public Object getValue() { return value; }
 	}

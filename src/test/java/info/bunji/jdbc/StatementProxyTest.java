@@ -177,14 +177,10 @@ public class StatementProxyTest extends AbstractTest {
 	/**
 	 * @throws Exception 意図しない例外
 	 */
-	@Test
+	@Test(expected=SQLException.class)
 	public void testException() throws Exception {
-		try {
-			Statement stmt = conn.createStatement();
-			stmt.executeQuery("SELECT * from bbb");
-			fail();
-		} catch (SQLException e){
-			assertThat(e, instanceOf(SQLException.class));
-		}
+		Statement stmt = conn.createStatement();
+		stmt.executeQuery("SELECT * from bbb");
+		fail();
 	}
 }

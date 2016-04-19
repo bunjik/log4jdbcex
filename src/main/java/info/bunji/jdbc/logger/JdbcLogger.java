@@ -32,6 +32,20 @@ public interface JdbcLogger {
 	/** loggerName */
 	public static final String LOGGER_NAME = "jdbclog";
 
+	/** success log format */
+	public static final String RETURN_MSG_FORMAT = "[executed %,4d ms] %s";
+
+	/** batch log format */
+	public static final String BATCH_MSG_FORMAT = "[executed (%d/%d)] %s";
+
+	/** batch success log format */
+	public static final String BATCH_RESULT_FORMAT = "[batch finished %,4d ms] (%d/%d)";
+
+	/** error log format */
+	public static final String EXCEPTION_MSG_FORMAT = "[executed %,4d ms] %s";
+
+	//public static final String RUNNING_MSG_FORMAT = "Running [elapsed %,4d ms] %s";
+
 	public RdbmsSpecifics getSpecifics();
 
 	/**
@@ -42,30 +56,18 @@ public interface JdbcLogger {
 	public String getConnectUrl();
 
 	/**
+	 * get logging status
 	 *
 	 * @return if logging enabled true, other false
 	 */
 	public boolean isJdbcLoggingEnabled();
 
 	/**
-	 * set logging accept conditiion.
+	 * get connection logging status
 	 *
-	 * @param regex accept filter regex string
+	 * @return if logging enabled true, other false
 	 */
-//	public void setAcceptFilter(String regex);
-
-	/**
-	 * set logging ignore conditiion.
-	 *
-	 * @param regex ignore filter regex string
-	 */
-//	public void setIgnoreFilter(String regex);
-
-	/**
-	 * set logging thresthold time.
-	 * @param millis threshold milliseconds
-	 */
-//	public void setTimeThreshold(long millis);
+	public boolean isConnectionLogging();
 
 	/**
 	 * output trace log.
