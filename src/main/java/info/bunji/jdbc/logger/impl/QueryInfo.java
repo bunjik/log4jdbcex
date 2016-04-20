@@ -35,12 +35,12 @@ public class QueryInfo implements Cloneable, Comparable<QueryInfo> {
 		// do nothing.
 	}
 
-	QueryInfo(LoggerHelper helper, String sql, Throwable t) {
-		this(helper.getStartTime(), System.currentTimeMillis() - helper.getStartTime(), sql, helper.getQueryId(), t);
+	QueryInfo(LoggerHelper helper, String sql) {
+		this(helper, sql, null);
 	}
 
-	QueryInfo(Long time, Long elapsed, String sql, String queryId) {
-		this(time, elapsed, sql, queryId, null);
+	QueryInfo(LoggerHelper helper, String sql, Throwable t) {
+		this(helper.getStartTime(), System.currentTimeMillis() - helper.getStartTime(), sql, helper.getQueryId(), t);
 	}
 
 	QueryInfo(Long time, Long elapsed, String sql, String queryId, Throwable t) {
@@ -71,6 +71,10 @@ public class QueryInfo implements Cloneable, Comparable<QueryInfo> {
 	public boolean isError() { return isError; }
 	public String getErrorMsg() { return errorMsg; }
 
+	/*
+	 * (非 Javadoc)
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
 	@Override
 	public int compareTo(QueryInfo o) {
 		int ret = 0;
@@ -81,6 +85,30 @@ public class QueryInfo implements Cloneable, Comparable<QueryInfo> {
 		return ret;
 	}
 
+	/* (非 Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof QueryInfo) {
+			return compareTo((QueryInfo) obj) == 0;
+		}
+		return false;
+	}
+
+	/*
+	 * (非 Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return queryId.hashCode();
+	}
+
+	/*
+	 * (非 Javadoc)
+	 * @see java.lang.Object#clone()
+	 */
 	@Override
 	public QueryInfo clone() {
 		try {

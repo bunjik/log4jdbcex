@@ -54,6 +54,7 @@ class ProxyFactory {
 	 ********************************************
 	 */
 	static Connection wrapConnection(Connection conn, String url) {
+		if (conn == null) return null;
 		return factory.newProxyInstance(Connection.class, new ConnectionProxy(conn,  url));
 	}
 

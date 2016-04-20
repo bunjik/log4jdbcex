@@ -240,7 +240,7 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 						} else {
 							debug(RETURN_MSG_FORMAT, elapsed, sql);
 						}
-						queryHistory.add(new QueryInfo(helper.getStartTime(), elapsed, sql, helper.getQueryId()));
+						queryHistory.add(new QueryInfo(helper, sql));
 					}
 				} else if (helper.getBatchList() != null) {
 					// バッチ実行の場合
@@ -253,7 +253,7 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 							} else {
 								debug(BATCH_MSG_FORMAT, i, cnt, sql);
 							}
-							queryHistory.add(new QueryInfo(helper.getStartTime(), -1L, sql, helper.getQueryId()));
+							queryHistory.add(new QueryInfo(helper.getStartTime(), -1L, sql, helper.getQueryId(), null));
 						}
 						i++;
 					}
@@ -288,7 +288,7 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 							}
 						} else {
 							// エラー時は条件にかかわらず出力
-							error(String.format(BATCH_MSG_FORMAT, i + 1, list.size(), sql, helper.getQueryId()), t);
+							error(String.format(BATCH_MSG_FORMAT, i + 1, list.size(), sql), t);
 						}
 					}
 					debug(BATCH_RESULT_FORMAT, elapsed, ret.length, ret.length);
@@ -297,7 +297,6 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 					long now = System.currentTimeMillis();
 					long elapsed = now - helper.getStartTime();
 					error(String.format(EXCEPTION_MSG_FORMAT, elapsed, sql), t);
-					//queryHistory.add(new QueryInfo(helper.getStartTime(), elapsed, sql, helper.getQueryId(), t));
 					queryHistory.add(new QueryInfo(helper, sql, t));
 				}
 			}
@@ -373,10 +372,9 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 		List<QueryInfo> activeQueries = new ArrayList<QueryInfo>();
 		synchronized (activeStatements) {
 			for (LoggerHelper helper : activeStatements) {
-				QueryInfo qi = new QueryInfo(helper.getStartTime(),
-								System.currentTimeMillis() - helper.getStartTime(),
-								isFormat ? FormatUtils.formatSql(helper.dumpSql()) : helper.dumpSql(),
-								helper.getQueryId());
+				QueryInfo qi = new QueryInfo(helper,
+							isFormat ? FormatUtils.formatSql(helper.dumpSql()) : helper.dumpSql(),
+							null);
 				qi.setDataSource(connectUrl);
 				activeQueries.add(qi);
 			}

@@ -15,8 +15,10 @@
  */
 package info.bunji.jdbc.logger;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +30,7 @@ import java.util.Map.Entry;
 import javax.naming.InitialContext;
 import javax.naming.NameClassPair;
 import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 import info.bunji.jdbc.DriverEx;
@@ -51,11 +54,12 @@ import net.arnx.jsonic.JSON;
  * logging setting examples:
  * {
  *  "_default_": {
- *		"timeThreshold": 0,
- *		"acceptFilter": ".*",
- *		"ignoreFilter": null,
- *		"historyCount": 30,
- *		"format": true
+ *		timeThreshold": 0,
+ *		acceptFilter : ".*",
+ *		ignoreFilter : null,
+ *		historyCount : 30,
+ *		format : true,
+ *		connectionLogging : false
  *	},
  *
  *	"jdbc:h2:tcp://localhost/~/test;SCHEMA=INFORMATION_SCHEMA": {
@@ -82,35 +86,14 @@ public class JdbcLoggerFactory {
 
 	private static Map<String,String> dsNameMap = new HashMap<String,String>();
 
-	private static Constructor<?> constructor;
+	private Constructor<?> constructor;
 
-	@SuppressWarnings("unused")
 	private static JdbcLoggerFactory instance = new JdbcLoggerFactory();
 
 	/** 設定ファイルの設定情報を保持する */
 	private static Map<String,Map<String,Object>> settingMap = new HashMap<String,Map<String,Object>>();
 
 	static {
-//		// 利用可能なLoggingライブラリを検索する(優先順を考慮)
-//		Map<String, Class<? extends JdbcLogger>> checkLogger = new LinkedHashMap<String, Class<? extends JdbcLogger>>() {{
-//			put("org.slf4j.Logger", Slf4jJdbcLogger.class);
-//			put("org.apache.commons.logging.Log", CommonsLoggingJdbcLogger.class);
-//			put("org.apache.log4j.Logger", Log4jJdbcLogger.class);
-//			put("java.util.logging.Logger", JdkJdbcLogger.class);
-//		}};
-//
-//		// 利用するLoggerを決定する
-//		for (Entry<String, Class<? extends JdbcLogger>> entry : checkLogger.entrySet()) {
-//			try {
-//				// 見つかったらそのクラスを利用する
-//				Class.forName(entry.getKey());
-//				constructor = entry.getValue().getConstructor(String.class);
-//				break;
-//			} catch (Exception e) {
-//				// do nothing.
-//			}
-//		}
-
 		InputStream is = null;
 		try {
 			// 設定ファイルの読み込み
@@ -121,13 +104,14 @@ public class JdbcLoggerFactory {
 				} catch (Exception e) {
 					System.err.println("jdbc logging setting error:" + e.getMessage());
 				} finally {
-					try { is.close(); } catch(Exception e) {}
+					try { is.close(); } catch(IOException e) {}
 				}
 			} else {
 				//System.out.println("[" + SETTING_FILE + "] not found. use default.");
 			}
-		} catch (Exception e) {
+		} catch (Throwable t) {
 			// do nothihg.
+			//System.out.println("jdbc logging setting load error. [" + t.getMessage() + "]");
 		} finally {
 			try { if (is != null) is.close(); } catch(Exception e) {}
 		}
@@ -149,7 +133,7 @@ public class JdbcLoggerFactory {
 	 *
 	 * @return logger constructor
 	 ********************************************
-	 */
+ 	 */
 	private Constructor<?> getLoggerConstructor() {
 		// 利用可能なLoggingライブラリ
 		Map<String, Class<? extends JdbcLogger>> checkLogger = new LinkedHashMap<String, Class<? extends JdbcLogger>>() {{
@@ -166,11 +150,20 @@ public class JdbcLoggerFactory {
 				Class.forName(entry.getKey());
 				c = entry.getValue().getConstructor(String.class);
 				break;
-			} catch (Exception e) {
-				// do nothing
+			} catch (ClassNotFoundException e) {
+				// do nothing.
+			} catch (NoSuchMethodException e) {
+				// do nothing.
+			} catch (SecurityException e) {
+				// do nothing.
 			}
 		}
 		return c;
+	}
+
+	private static JdbcLogger instanceLogger(String name)
+			throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
+		return (JdbcLogger) instance.constructor.newInstance(name);
 	}
 
 	/**
@@ -205,10 +198,18 @@ public class JdbcLoggerFactory {
 						}
 					}
 				}
-			} catch (Exception e) {
+			} catch (RuntimeException e) {
+				// do nothing.
+			} catch (NamingException e) {
+				// do nothing.
+			} catch (NoSuchMethodException e) {
+				// do nothing.
+			} catch (IllegalAccessException e) {
+				// do nothing.
+			} catch (InvocationTargetException e) {
 				// do nothing.
 			} finally {
-				try { if (ctx != null) ctx.close(); } catch(Exception e) {}
+				try { if (ctx != null) ctx.close(); } catch(NamingException e) {}
 			}
 		}
 		return dsNameMap.get(url);
@@ -227,7 +228,8 @@ public class JdbcLoggerFactory {
 		synchronized (loggerCache) {
 			if (!hasLogger(name)) {
 				try {
-					loggerCache.put(name, (JdbcLogger)constructor.newInstance(name));
+//					loggerCache.put(name, (JdbcLogger)constructor.newInstance(name));
+					loggerCache.put(name, instanceLogger(name));
 					if (settingMap.containsKey(DEFAULT_SETTING)) {
 						// 事前に共通設定を反映
 						loggerCache.get(name).setSetting(settingMap.get(DEFAULT_SETTING));

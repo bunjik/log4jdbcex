@@ -68,7 +68,7 @@ public class DriverProxy implements InvocationHandler {
 						}
 					} catch (Throwable t) {
 						if (logger.isConnectionLogging()) {
-							logger.error(String.format(JdbcLogger.EXCEPTION_MSG_FORMAT, System.currentTimeMillis() - start, "get connection.", t.getCause()));
+							logger.error(String.format(JdbcLogger.EXCEPTION_MSG_FORMAT, System.currentTimeMillis() - start, "get connection."), t.getCause());
 						}
 						throw t;
 					}
