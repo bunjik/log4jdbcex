@@ -29,22 +29,20 @@ public class OracleRdbmsSpecifics extends DefaultRdbmsSpecifics {
 
 	private final SimpleDateFormat dtFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 
-	public OracleRdbmsSpecifics() {
-		super();
-	}
-
 	@Override
 	public String formatParameterObject(Object object) {
+		String formatStr;
 		if (object instanceof Timestamp) {
 			synchronized (tsFormat) {
-				return String.format("to_timestamp('%s','mm/dd/yyyy hh24:mi:ss.ff3')", tsFormat.format(object));
+				formatStr = String.format("to_timestamp('%s','mm/dd/yyyy hh24:mi:ss.ff3')", tsFormat.format(object));
 			}
 		} else if (object instanceof Date) {
 			synchronized (dtFormat) {
-				return String.format("to_date('%s','mm/dd/yyyy hh24:mi:ss')", dtFormat.format(object));
+				formatStr = String.format("to_date('%s','mm/dd/yyyy hh24:mi:ss')", dtFormat.format(object));
 			}
 		} else {
-			return super.formatParameterObject(object);
+			formatStr = super.formatParameterObject(object);
 		}
+		return formatStr;
 	}
 }
