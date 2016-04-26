@@ -10,10 +10,17 @@ import java.util.Properties;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import info.bunji.jdbc.logger.JdbcLoggerFactory;
 
 /**
  * @author f.kinoshita
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({JdbcLoggerFactory.class})
 public class DriverExTest extends AbstractTest {
 
 	private static Driver driver;
@@ -43,6 +50,7 @@ public class DriverExTest extends AbstractTest {
 
 	@Test
 	public void testConnect() throws Exception {
+		assertThat(driver.connect(null, prop), is(nullValue()));
 		assertThat(driver.connect(ACCEPT_URL, prop), is(notNullValue()));
 		assertThat(driver.connect(REAL_URL, prop), is(nullValue()));
 		assertThat(driver.connect(REAL_URL, new Properties()), is(nullValue()));
@@ -51,10 +59,24 @@ public class DriverExTest extends AbstractTest {
 	@Test
 	public void testConnect2() throws Exception {
 		Driver d = new DriverEx();
+		assertThat(d.connect(null, prop), is(nullValue()));
 		assertThat(d.connect(ACCEPT_URL, prop), is(notNullValue()));
 		assertThat(d.connect(REAL_URL, prop), is(nullValue()));
 		assertThat(d.connect(REAL_URL, new Properties()), is(nullValue()));
 	}
+
+//	@Test
+//	public void testConnect3() throws Exception {
+//		PowerMockito.spy(JdbcLoggerFactory.class);
+//		JdbcLogger mockLogger = spy(JdbcLogger.class);
+//
+//		Field field = PowerMockito.field(JdbcLoggerFactory.class, "loggerCache");
+//
+//		Mockito.when(mockLogger.isJdbcLoggingEnabled()).thenReturn(false);
+//		PowerMockito.when(JdbcLoggerFactory.getLogger(ACCEPT_URL)).thenReturn(mockLogger);
+//
+//		assertThat(driver.connect(ACCEPT_URL, prop), is(notNullValue()));
+//	}
 
 	@Test
 	public void testGetMajorVersion() {

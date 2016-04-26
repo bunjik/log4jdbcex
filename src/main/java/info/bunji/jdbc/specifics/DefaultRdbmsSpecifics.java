@@ -26,28 +26,26 @@ public class DefaultRdbmsSpecifics implements RdbmsSpecifics {
 
 	private SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
 
-	public DefaultRdbmsSpecifics() {
-		// do nothing.
-	}
-
 	/* (非 Javadoc)
 	 * @see info.bunji.jdbc.specifics.RdbmsSpecifics#formatParameterObject(java.lang.Object)
 	 */
 	@Override
 	public String formatParameterObject(Object object) {
+		String formatStr;
 		if (object == null) {
-			return "NULL";
+			formatStr = "NULL";
 		} else {
 			if (object instanceof String) {
-				return "'" + escapeString((String) object) + "'";
+				formatStr = "'" + escapeString((String) object) + "'";
 			} else if (object instanceof Date) {
 				synchronized (dateFormat) {
-					return "'" + dateFormat.format(object) + "'";
+					formatStr = "'" + dateFormat.format(object) + "'";
 				}
 			} else {
-				return object.toString();
+				formatStr = object.toString();
 			}
 		}
+		return formatStr;
 	}
 
 	/**

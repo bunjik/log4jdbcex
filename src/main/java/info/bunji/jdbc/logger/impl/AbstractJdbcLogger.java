@@ -94,7 +94,7 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	public AbstractJdbcLogger(String url) {
 		connectUrl = url;
 
-		if (url.matches("^jdbc:oracle:")) {
+		if (url.matches("^jdbc:oracle:.*")) {
 			specifics = new OracleRdbmsSpecifics();
 		} else {
 			specifics = new DefaultRdbmsSpecifics();

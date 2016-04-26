@@ -14,6 +14,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.sql.Types;
 
 import org.junit.After;
@@ -96,6 +97,74 @@ public class StatementProxyTest extends AbstractTest {
 	 * @throws Exception 意図しない例外
 	 */
 	@Test
+	public void testRegisterOutParameter() throws Exception {
+		CallableStatement stmt = conn.prepareCall("{CALL testCall(?, ?, ?, ?)}");
+		stmt.setInt(1, 50);
+		stmt.setString(2, "abc");
+		long t = System.currentTimeMillis();
+		stmt.setTimestamp(3, new Timestamp(t));
+		stmt.setTimestamp(4, Timestamp.valueOf("2001-02-03 10:20:30.0"));
+		stmt.registerOutParameter(1, Types.INTEGER);
+		stmt.registerOutParameter(2, Types.VARCHAR);
+		stmt.executeUpdate();
+		try {
+			stmt.getTimestamp(3);
+			fail("not registered out parameter accessible");
+		} catch (SQLException e) {
+			// expected exception
+		}
+		stmt.registerOutParameter(3, Types.TIMESTAMP);
+		stmt.registerOutParameter(4, Types.TIMESTAMP);
+		stmt.executeUpdate();
+
+		assertEquals(t + 1, stmt.getTimestamp(3).getTime());
+		//assertEquals(t + 1, stmt.getTimestamp("C").getTime());
+
+		assertEquals("2001-02-03 10:20:30.0", stmt.getTimestamp(4).toString());
+		//assertEquals("2001-02-03 10:20:30.0", stmt.getTimestamp("D").toString());
+		assertEquals("10:20:30", stmt.getTime(4).toString());
+		//assertEquals("10:20:30", stmt.getTime("D").toString());
+		assertEquals("2001-02-03", stmt.getDate(4).toString());
+		//assertEquals("2001-02-03", stmt.getDate("D").toString());
+	}
+
+/* カラム名によるプロシージャ対応が必要
+	@Test
+	public void testRegisterOutParameter() throws Exception {
+		CallableStatement stmt = conn.prepareCall("{CALL testCall(?, ?, ?, ?)}");
+		stmt.setInt("A", 50);
+		stmt.setString("B", "abc");
+		long t = System.currentTimeMillis();
+		stmt.setTimestamp("C", new Timestamp(t));
+		stmt.setTimestamp("D", Timestamp.valueOf("2001-02-03 10:20:30.0"));
+		stmt.registerOutParameter(1, Types.INTEGER);
+		stmt.registerOutParameter("B", Types.VARCHAR);
+		stmt.executeUpdate();
+		try {
+			stmt.getTimestamp("C");
+			fail("not registered out parameter accessible");
+		} catch (SQLException e) {
+			// expected exception
+		}
+		stmt.registerOutParameter(3, Types.TIMESTAMP);
+		stmt.registerOutParameter(4, Types.TIMESTAMP);
+		stmt.executeUpdate();
+
+		assertEquals(t + 1, stmt.getTimestamp(3).getTime());
+		assertEquals(t + 1, stmt.getTimestamp("C").getTime());
+
+		assertEquals("2001-02-03 10:20:30.0", stmt.getTimestamp(4).toString());
+		assertEquals("2001-02-03 10:20:30.0", stmt.getTimestamp("D").toString());
+		assertEquals("10:20:30", stmt.getTime(4).toString());
+		assertEquals("10:20:30", stmt.getTime("D").toString());
+		assertEquals("2001-02-03", stmt.getDate(4).toString());
+		assertEquals("2001-02-03", stmt.getDate("D").toString());
+	}
+*/
+	/**
+	 * @throws Exception 意図しない例外
+	 */
+	@Test
 	public void testAddBatchString() throws Exception {
 		Statement stmt = conn.createStatement();
 		stmt.addBatch("SELECT * from test");
@@ -122,7 +191,7 @@ public class StatementProxyTest extends AbstractTest {
 	@Test
 	public void testAddBatchExecute2() throws Exception {
 		PreparedStatement stmt = conn.prepareStatement("INSERT into test values(?)");
-		stmt.setString(1, "ccc");
+		stmt.setString(1, "'ccc");
 		stmt.addBatch();
 		//stmt.setString(1, "ddd");
 		stmt.setNull(1, Types.VARCHAR);

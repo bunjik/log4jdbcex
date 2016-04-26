@@ -31,10 +31,6 @@ public class QueryInfo implements Cloneable, Comparable<QueryInfo> {
 	private boolean isError = false;
 	private String errorMsg = null;
 
-	QueryInfo() {
-		// do nothing.
-	}
-
 	QueryInfo(LoggerHelper helper, String sql) {
 		this(helper, sql, null);
 	}
@@ -54,13 +50,9 @@ public class QueryInfo implements Cloneable, Comparable<QueryInfo> {
 		}
 	}
 
-	public void setTime(Long time) { this.time = time; }
-	public void setElapsed(Long elapsed) { this.elapsed = elapsed; }
 	public void setSql(String sql) { this.sql = sql; }
-	public void setId(String queryId) { this.queryId = queryId; }
 	public void setHost(String host) { this.host = host; }
 	public void setDataSource(String dataSource) { this.dataSource = dataSource; }
-	public void setErrorMsg(String errorMsg) { this.errorMsg = errorMsg; isError = (errorMsg != null); }
 
 	public Long getTime() { return time; }
 	public Long getElapsed() { return elapsed; }

@@ -199,31 +199,40 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 				clearBatchList();
 			} else if (name.equals("clearParameters")){
 				clearParameterList();
-			} else if (name.equals("registerOutParameter")){
+/*			} else if (name.equals("registerOutParameter")){
 				int sqlType = (Integer) args[1];
-				if (args[0] instanceof String) {
-					String parameterName = (String) args[0];
-					addParameter(getParameterIndex(parameterName), sqlType, "(OUT)");
-				} else {
-					Integer parameterIndex = (Integer) args[0];
-					addParameter(parameterIndex, sqlType, "(OUT)");
+				try {
+					if (args[0] instanceof String) {
+						//String parameterName = (String) args[0];
+						//addParameter(getParameterIndex(parameterName), sqlType, "(OUT)");
+						addParameter((String) args[0], sqlType, "(OUT)");
+					} else {
+						Integer parameterIndex = (Integer) args[0];
+						addParameter(parameterIndex, sqlType, "(OUT)");
+					}
+				} catch (Exception e) {
+					// do nothing.
 				}
-			} else if (name.equals("getConnection")){
+*/			} else if (name.equals("getConnection")){
 				// 取得したConnectionをラップする
 				ret = ProxyFactory.wrapConnection((Connection)ret, url);
 			} else if (paramTypes.containsKey(name)) {
-				Integer type = paramTypes.get(name);
-				Object  value = args[1];
-				if (type == null) {
-					type = Types.JAVA_OBJECT;
-					value = "(" + name.substring(3) + ")";
-				}
+				try {
+					Integer type = paramTypes.get(name);
+					Object  value = args[1];
+					if (type == null) {
+						type = Types.JAVA_OBJECT;
+						value = "(" + name.substring(3) + ")";
+					}
 
-				if (method.getParameterTypes()[0].equals(String.class)) {
-					// CallableStatment用
-					addParameter(getParameterIndex((String)args[0]), type, value);
-				} else {
-					addParameter((Integer)args[0], type, value);
+					if (method.getParameterTypes()[0].equals(String.class)) {
+						// CallableStatment用
+						addParameter(getParameterIndex((String)args[0]), type, value);
+					} else {
+						addParameter((Integer)args[0], type, value);
+					}
+				} catch (Exception e) {
+					// do nothing.
 				}
 			}
 		}

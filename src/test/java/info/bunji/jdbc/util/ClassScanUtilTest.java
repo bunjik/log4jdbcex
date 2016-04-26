@@ -28,6 +28,13 @@ public class ClassScanUtilTest {
 	}
 
 	@Test
+	public void testFindClassesFromPackageInPath2() throws Exception {
+		List<Class<?>> classes = ClassScanUtil.findClassesFromPackage("info.bunji.jdbc.dummy");
+
+		assertThat(classes.size(), is(0));
+	}
+
+	@Test
 	public void testFindClassesFromPackageInJar() throws Exception {
 		List<Class<?>> classes = ClassScanUtil.findClassesFromPackage("org.slf4j");
 
@@ -39,5 +46,4 @@ public class ClassScanUtilTest {
 		assertThat(classes.contains(MarkerFactory.class), is(true));
 		assertThat(classes.contains(MDC.class), is(true));
 	}
-
 }

@@ -3,9 +3,16 @@
  */
 package info.bunji.jdbc;
 
+import java.lang.reflect.Constructor;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -13,6 +20,7 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 import org.apache.commons.dbcp.BasicDataSource;
+import org.h2.tools.SimpleResultSet;
 import org.junit.BeforeClass;
 
 /**
@@ -62,22 +70,15 @@ public abstract class AbstractTest {
 			stmt.execute("create table test(aaa varchar(10))");
 			stmt.execute("insert into test values('sample')");
 
-			// regist procedure
-			stmt.execute("drop alias if exists proctest");
-			StringBuilder proc = new StringBuilder();
-			proc.append("create alias proctest as $$")
-				.append("String proctest(String str, int len) {")
-				.append(" if(str != null && str.length() < len) {")
-				.append("   return str;")
-				.append(" }")
-				.append(" return str.substring(0, len);")
-				.append("}$$");
-			stmt.execute(proc.toString());
+			// regist procedures
+			stmt.execute("create alias if not exists procTest FOR \"" +
+					AbstractTest.class.getName() + ".procTest\"");
 
-			proc = new StringBuilder();
-			proc.append("create alias if not exists waitfunc as ")
-				.append("$$String waitfunc(String str) throws Exception { Thread.sleep(2000); return str;}$$");
-			stmt.execute(proc.toString());
+			stmt.execute("create alias if not exists waitfunc FOR \"" +
+					AbstractTest.class.getName() + ".waitfunc\"");
+
+			stmt.execute("create alias if not exists testCall FOR \"" +
+					AbstractTest.class.getName() + ".testCall\"");
 
 			c.close();
 		}
@@ -99,4 +100,56 @@ public abstract class AbstractTest {
 			// do nothing.
 		}
 	}
+
+	protected <T> T newInstance(Class<T> clazz, Object... args) throws Exception {
+		List<Class<?>> argTypes = new ArrayList<Class<?>>();
+		for (Object arg : args) {
+			if (arg != null) {
+				argTypes.add(arg.getClass());
+			} else {
+				argTypes.add(Object.class);
+			}
+		}
+
+		Constructor<T> constructor = clazz.getDeclaredConstructor(argTypes.toArray(new Class[0]));
+		constructor.setAccessible(true);
+
+		return constructor.newInstance(args);
+	}
+
+	public static String procTest(String str, int len) throws SQLException {
+		if(str != null && str.length() < len) {
+		   return str;
+		}
+		return str.substring(0, len);
+
+	}
+
+	public static String waitfunc(String str) throws Exception {
+		Thread.sleep(2000);
+		return str;
+	}
+
+	/**
+	 * This method is called via reflection from the database.
+	 *
+	 * @param conn the connection
+	 * @param a the value a
+	 * @param b the value b
+	 * @param c the value c
+	 * @param d the value d
+	 * @return a result set
+	 */
+	public static ResultSet testCall(Connection conn, int a, String b, Timestamp c, Timestamp d) throws SQLException {
+		SimpleResultSet rs = new SimpleResultSet();
+		rs.addColumn("A", Types.INTEGER, 0, 0);
+		rs.addColumn("B", Types.VARCHAR, 0, 0);
+		rs.addColumn("C", Types.TIMESTAMP, 0, 0);
+		rs.addColumn("D", Types.TIMESTAMP, 0, 0);
+		if ("jdbc:columnlist:connection".equals(conn.getMetaData().getURL())) {
+			return rs;
+		}
+		rs.addRow(a * 2, b.toUpperCase(), new Timestamp(c.getTime() + 1), d);
+		return rs;
+    }
 }

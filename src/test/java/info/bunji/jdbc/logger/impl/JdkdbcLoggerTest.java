@@ -8,8 +8,6 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.LogManager;
 
 import org.junit.Before;
@@ -138,39 +136,5 @@ public class JdkdbcLoggerTest {
 		} catch(Exception e) {
 			fail();
 		}
-	}
-
-	@Test
-	public void testSetAcceptFilter() {
-		Map<String, Object> settings = new HashMap<String, Object>();
-
-		settings.put("acceptFilter", ".*");
-		logger.setSetting(settings);
-
-		settings.put("acceptFilter", null);
-		logger.setSetting(settings);
-
-		settings.put("acceptFilter", "");
-		logger.setSetting(settings);
-
-		settings.put("acceptFilter", "*");
-		logger.setSetting(settings);
-	}
-
-	@Test
-	public void testSetIgnoreFilter() {
-		Map<String, Object> settings = new HashMap<String, Object>();
-
-		settings.put("ignoreFilter", ".*");
-		logger.setSetting(settings);
-
-		settings.put("ignoreFilter", null);
-		logger.setSetting(settings);
-
-		settings.put("ignoreFilter", "");
-		logger.setSetting(settings);
-
-		settings.put("ignoreFilter", "*");
-		logger.setSetting(settings);
 	}
 }

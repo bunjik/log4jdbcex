@@ -6,9 +6,6 @@ package info.bunji.jdbc.logger.impl;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -129,39 +126,5 @@ public class Slf4jJdbcLoggerTest {
 		} catch(Exception e) {
 			fail();
 		}
-	}
-
-	@Test
-	public void testSetAcceptFilter() {
-		Map<String, Object> settings = new HashMap<String, Object>();
-
-		settings.put("acceptFilter", ".*");
-		logger.setSetting(settings);
-
-		settings.put("acceptFilter", null);
-		logger.setSetting(settings);
-
-		settings.put("acceptFilter", "");
-		logger.setSetting(settings);
-
-		settings.put("acceptFilter", "*");
-		logger.setSetting(settings);
-	}
-
-	@Test
-	public void testSetIgnoreFilter() {
-		Map<String, Object> settings = new HashMap<String, Object>();
-
-		settings.put("ignoreFilter", ".*");
-		logger.setSetting(settings);
-
-		settings.put("ignoreFilter", null);
-		logger.setSetting(settings);
-
-		settings.put("ignoreFilter", "");
-		logger.setSetting(settings);
-
-		settings.put("ignoreFilter", "*");
-		logger.setSetting(settings);
 	}
 }

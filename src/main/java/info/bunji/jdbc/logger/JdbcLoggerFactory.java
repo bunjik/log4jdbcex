@@ -15,7 +15,6 @@
  */
 package info.bunji.jdbc.logger;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -98,17 +97,7 @@ public class JdbcLoggerFactory {
 		try {
 			// 設定ファイルの読み込み
 			is = JdbcLoggerFactory.class.getResourceAsStream("/" + SETTING_FILE);
-			if (is != null) {
-				try {
-					settingMap = JSON.decode(is);
-				} catch (Exception e) {
-					System.err.println("jdbc logging setting error:" + e.getMessage());
-				} finally {
-					try { is.close(); } catch(IOException e) {}
-				}
-			} else {
-				//System.out.println("[" + SETTING_FILE + "] not found. use default.");
-			}
+			settingMap = JSON.decode(is);
 		} catch (Throwable t) {
 			// do nothihg.
 			//System.out.println("jdbc logging setting load error. [" + t.getMessage() + "]");
@@ -150,18 +139,14 @@ public class JdbcLoggerFactory {
 				Class.forName(entry.getKey());
 				c = entry.getValue().getConstructor(String.class);
 				break;
-			} catch (ClassNotFoundException e) {
-				// do nothing.
-			} catch (NoSuchMethodException e) {
-				// do nothing.
-			} catch (SecurityException e) {
-				// do nothing.
+			} catch (Throwable t) {
+				printThrowable(t);
 			}
 		}
 		return c;
 	}
 
-	private static JdbcLogger instanceLogger(String name)
+	private static JdbcLogger getLoggerInstance(String name)
 			throws IllegalArgumentException, InstantiationException, IllegalAccessException, InvocationTargetException {
 		return (JdbcLogger) instance.constructor.newInstance(name);
 	}
@@ -198,16 +183,8 @@ public class JdbcLoggerFactory {
 						}
 					}
 				}
-			} catch (RuntimeException e) {
-				// do nothing.
-			} catch (NamingException e) {
-				// do nothing.
-			} catch (NoSuchMethodException e) {
-				// do nothing.
-			} catch (IllegalAccessException e) {
-				// do nothing.
-			} catch (InvocationTargetException e) {
-				// do nothing.
+			} catch (Throwable t) {
+				printThrowable(t);
 			} finally {
 				try { if (ctx != null) ctx.close(); } catch(NamingException e) {}
 			}
@@ -228,15 +205,14 @@ public class JdbcLoggerFactory {
 		synchronized (loggerCache) {
 			if (!hasLogger(name)) {
 				try {
-//					loggerCache.put(name, (JdbcLogger)constructor.newInstance(name));
-					loggerCache.put(name, instanceLogger(name));
+					loggerCache.put(name, getLoggerInstance(name));
 					if (settingMap.containsKey(DEFAULT_SETTING)) {
 						// 事前に共通設定を反映
 						loggerCache.get(name).setSetting(settingMap.get(DEFAULT_SETTING));
 					}
 					loggerCache.get(name).setSetting(settingMap.get(name));
-				} catch(Exception e) {
-					e.printStackTrace();
+				} catch(Throwable t) {
+					printThrowable(t);
 				}
 			}
 		}
@@ -303,5 +279,9 @@ public class JdbcLoggerFactory {
 	 */
 	public static Map<String,Object> getSetting(String loggerName) {
 		return settingMap.get(loggerName);
+	}
+
+	private static void printThrowable(Throwable t) {
+		//t.printStackTrace();
 	}
 }

@@ -127,7 +127,7 @@ public class DriverProxy implements InvocationHandler {
 		Driver driver = null;
 
 		// getDriver()だと再帰となるため自分自身のURLの場合のみ処理する
-		if (url.startsWith(DriverEx.DRIVER_URL_PREFIX)) {
+		if (url != null && url.startsWith(DriverEx.DRIVER_URL_PREFIX)) {
 			realDriverLast = DriverManager.getDriver(getRealUrl(url.toString()));
 			driver = realDriverLast;
 		}

@@ -146,6 +146,20 @@ public class RestApiServletTest extends AbstractTest {
 		assertThat(results.containsKey("log4jdbcDs"), is(false));
 	}
 
+//	@Test
+//	public void testBroadcast2() throws Exception {
+//		WebRequest req = new GetMethodWebRequest("http://localhost/log4jdbcex/history");
+//		req.setParameter("servers", ""); // enpty parameter
+//		req.setHeaderField("Cookie", "NAME1=cookieValue;");
+//		WebResponse res = client.getResponse(req);
+//
+//		assertThat(res.getResponseCode(), is(HttpServletResponse.SC_OK));
+//
+//		Map<String, List<Map<String, Object>>> results = JSON.decode(res.getInputStream());
+//
+//		assertThat(results.containsKey("log4jdbcDs"), is(false));
+//	}
+
 	@Test
 	public void testRunning() throws Exception {
 		// dummy query
@@ -244,13 +258,4 @@ public class RestApiServletTest extends AbstractTest {
 								res.getInputStream(),
 								"application/json; charset=UTF-8"));
 	}
-
-//	@Test
-//	public void testBroadcast() throws Exception {
-//		WebRequest req = new GetMethodWebRequest("http://localhost/log4jdbcex/history?servers=localhost");
-//		WebResponse res = client.getResponse(req);
-//
-//		System.out.println(res.getText());
-//	}
-
 }
