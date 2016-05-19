@@ -6,6 +6,7 @@ import static org.junit.Assert.*;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 
 import org.junit.BeforeClass;
@@ -115,19 +116,16 @@ public class DriverExTest extends AbstractTest {
 //	@Test
 //	public void testGetParentLogger() throws Exception {
 //		Logger logger = driver.getParentLogger();
-//		Driver h2 = new org.h2.Driver();
+//		org.h2.Driver h2 = new org.h2.Driver();
 //		Logger h2Logger = h2.getParentLogger();
 //		assertThat(logger, is(h2Logger));
 //	}
 
-//	@Test
-//	public void testGetParentLogger2() {
-//		Driver d = new DriverEx();
-//		try {
-//			d.getParentLogger();
-//			fail();
-//		} catch (Exception e) {
-//			assertThat(e, instanceOf(SQLFeatureNotSupportedException.class));
-//		}
-//	}
+	// for JDBC 4.1
+	@Test(expected=SQLFeatureNotSupportedException.class)
+	public void testGetParentLogger2() throws Exception {
+		DriverEx d = new DriverEx();
+		d.getParentLogger();
+		fail();
+	}
 }

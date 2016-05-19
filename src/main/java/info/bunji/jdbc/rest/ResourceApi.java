@@ -106,7 +106,8 @@ class ResourceApi extends AbstractApi {
 
 	protected InputStream getResourceStream(String path) throws IOException {
 		logger.trace(resourceBase + path);
-		InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceBase + path);
+		//InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceBase + path);
+		InputStream is = getClass().getClassLoader().getResourceAsStream(resourceBase + path);
 		if (is != null) {
 			return new BufferedInputStream(is);
 		}

@@ -72,6 +72,19 @@ public class AbstractJdbcLoggerTest {
 		assertThat(logger.getConnectUrl(), is("testLogger"));
 	}
 
+	/**
+	 * {@link info.bunji.jdbc.logger.impl.AbstractJdbcLogger#getDispUrl()} のためのテスト・メソッド。
+	 */
+	@Test
+	public void testGetDispUrl() {
+		JdbcLogger logger1 = new TestJdbcLogger("jdbc:oracle:test?usename=aaa&password=bbb");
+		assertThat(logger1.getDispUrl(), is("jdbc:oracle:test"));
+
+		JdbcLogger logger2 = new TestJdbcLogger("jdbc:h2:test;aaa=123;bbb=456");
+		assertThat(logger2.getDispUrl(), is("jdbc:h2:test"));
+	}
+
+
 //	/**
 //	 * {@link info.bunji.jdbc.logger.impl.AbstractJdbcLogger#addExecStatement(info.bunji.jdbc.LoggerHelper)} のためのテスト・メソッド。
 //	 */

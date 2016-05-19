@@ -3,12 +3,13 @@
  */
 package info.bunji.jdbc;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import org.junit.After;
 import org.junit.Before;
@@ -50,7 +51,7 @@ public class ConnectionProxyTest extends AbstractTest {
 	@Test
 	public void testGetUrl() {
 		ConnectionProxy proxy = new ConnectionProxy(conn, REAL_URL);
-		assertThat(proxy.url, is(REAL_URL));
+		assertThat(proxy.getUrl(), is(REAL_URL));
 	}
 
 	/**
@@ -58,7 +59,8 @@ public class ConnectionProxyTest extends AbstractTest {
 	 */
 	@Test
 	public void testCreateStatement() throws Exception {
-		assertThat(conn.createStatement(), is(notNullValue()));
+		Statement stmt = conn.createStatement();
+		assertThat(stmt, is(notNullValue()));
 	}
 
 	/**

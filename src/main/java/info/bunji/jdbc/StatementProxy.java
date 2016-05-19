@@ -222,7 +222,8 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 					Object  value = args[1];
 					if (type == null) {
 						type = Types.JAVA_OBJECT;
-						value = "(" + name.substring(3) + ")";
+						//value = "(" + name.substring(3) + ")";
+						value = "NULL";
 					}
 
 					if (method.getParameterTypes()[0].equals(String.class)) {
@@ -293,5 +294,4 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 		}
 		return -1;
 	}
-
 }

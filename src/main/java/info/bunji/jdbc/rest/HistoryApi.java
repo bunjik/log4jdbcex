@@ -78,7 +78,7 @@ class HistoryApi extends AbstractApi {
 				for (QueryInfo qi : qiList) {
 					qi.setHost(host);
 				}
-				tmpMap.put(log.getConnectUrl(), qiList);
+				tmpMap.put(log.getDispUrl(), qiList);
 			}
 
 			JSON.encode(tmpMap, bos, false);

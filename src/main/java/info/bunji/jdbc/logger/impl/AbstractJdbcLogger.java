@@ -64,6 +64,9 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	/** このLoggerインスタンスが出力対象とする接続URL */
 	String connectUrl;
 
+	/** このLoggerインスタンスが出力対象とする接続URL */
+	String dispUrl;
+
 	/** 実行履歴の保持件数(接続URL単位) */
 	int historyCount = 50;
 
@@ -74,7 +77,8 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 		public boolean add(QueryInfo info) {
 			if (historyCount <= 0) return true;
 
-			info.setDataSource(connectUrl);
+			//info.setDataSource(connectUrl);
+			info.setDataSource(dispUrl);
 
 			// 保持件数を超えるものは古いものから削除
 			while(size() >= historyCount) remove(0);
@@ -93,6 +97,17 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	 */
 	public AbstractJdbcLogger(String url) {
 		connectUrl = url;
+		dispUrl = url;
+
+		// URLパラメータにはパスワードを含む場合があるため除去
+		int pos = dispUrl.indexOf("?");
+		if (pos != -1) {
+			dispUrl = dispUrl.substring(0, pos);
+		}
+		pos = dispUrl.indexOf(";");
+		if (pos != -1) {
+			dispUrl = dispUrl.substring(0, pos);
+		}
 
 		if (url.matches("^jdbc:oracle:.*")) {
 			specifics = new OracleRdbmsSpecifics();
@@ -137,6 +152,11 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	@Override
 	public String getConnectUrl() {
 		return connectUrl;
+	}
+
+	@Override
+	public String getDispUrl() {
+		return dispUrl;
 	}
 
 	/**
@@ -375,7 +395,7 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 				QueryInfo qi = new QueryInfo(helper,
 							isFormat ? FormatUtils.formatSql(helper.dumpSql()) : helper.dumpSql(),
 							null);
-				qi.setDataSource(connectUrl);
+				qi.setDataSource(dispUrl);
 				activeQueries.add(qi);
 			}
 		}

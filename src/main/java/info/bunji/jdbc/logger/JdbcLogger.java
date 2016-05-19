@@ -56,6 +56,14 @@ public interface JdbcLogger {
 	public String getConnectUrl();
 
 	/**
+	 * get show url.
+	 *
+	 * @return jdbc url
+	 */
+	public String getDispUrl();
+
+
+	/**
 	 * get logging status
 	 *
 	 * @return if logging enabled true, other false
