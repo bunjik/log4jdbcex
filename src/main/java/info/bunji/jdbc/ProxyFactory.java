@@ -45,6 +45,10 @@ class ProxyFactory {
 		return factory.newProxyInstance(Driver.class, new DriverProxy());
 	}
 
+	static ProxyFactory getInstance() {
+		return factory;
+	}
+
 	/**
 	 ********************************************
 	 *
@@ -53,21 +57,21 @@ class ProxyFactory {
 	 * @return wrapperd connection
 	 ********************************************
 	 */
-	static Connection wrapConnection(Connection conn, String url) {
+	static Connection wrapConnection(Connection conn, String url, String connectionId) {
 		if (conn == null) return null;
-		return factory.newProxyInstance(Connection.class, new ConnectionProxy(conn,  url));
+		return factory.newProxyInstance(Connection.class, new ConnectionProxy(conn,  url, connectionId));
 	}
 
-	static Statement wrapStatement(Statement conn, String url) {
-		return factory.newProxyInstance(Statement.class, new StatementProxy(conn,  url));
+	static Statement wrapStatement(Statement conn, String url, String connectionId) {
+		return factory.newProxyInstance(Statement.class, new StatementProxy(conn,  url, connectionId));
 	}
 
-	static PreparedStatement wrapPreparedStatement(PreparedStatement conn, String url, String sql) {
-		return factory.newProxyInstance(PreparedStatement.class, new StatementProxy(conn,  url, sql));
+	static PreparedStatement wrapPreparedStatement(PreparedStatement conn, String url, String sql, String connectionId) {
+		return factory.newProxyInstance(PreparedStatement.class, new StatementProxy(conn,  url, sql, connectionId));
 	}
 
-	static CallableStatement wrapCallableStatement(CallableStatement conn, String url, String sql) {
-		return factory.newProxyInstance(CallableStatement.class, new StatementProxy(conn,  url, sql));
+	static CallableStatement wrapCallableStatement(CallableStatement conn, String url, String sql, String connectionId) {
+		return factory.newProxyInstance(CallableStatement.class, new StatementProxy(conn,  url, sql, connectionId));
 	}
 
 	/**
@@ -80,7 +84,7 @@ class ProxyFactory {
 	 * @return proxied object
 	 ********************************************
 	 */
-	private <T> T newProxyInstance(Class<T> type, InvocationHandler handler) {
+	<T> T newProxyInstance(Class<T> type, InvocationHandler handler) {
 		return type.cast(Proxy.newProxyInstance(handler.getClass().getClassLoader(), new Class<?>[] {type}, handler));
 	}
 }

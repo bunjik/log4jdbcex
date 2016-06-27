@@ -1,6 +1,6 @@
 {
 	"_default_": {
-		connectionLogging : true,
+		connectionLogging : false,
 		timeThreshold : 0,
 		acceptFilter : ".*",
 		ignoreFilter : null,

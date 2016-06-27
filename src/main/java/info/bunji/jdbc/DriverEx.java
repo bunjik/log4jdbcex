@@ -15,12 +15,17 @@
  */
 package info.bunji.jdbc;
 
+import java.net.NetworkInterface;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
@@ -38,6 +43,8 @@ public class DriverEx implements java.sql.Driver {
 
 	/** connection url prefix */
 	public static final String DRIVER_URL_PREFIX = "jdbc:" + DRIVER_NAME + ":";
+
+	public static final String BASE_CONN_ID;
 
 	static {
 		Set<String> subDrivers = new TreeSet<String>();
@@ -75,6 +82,50 @@ public class DriverEx implements java.sql.Driver {
 		} catch (Exception s) {
 			throw new RuntimeException("could not register driver!", s);
 		}
+
+		// mongodb machineId generate logic
+		// build a 2-byte machine piece based on NICs info
+		int machinePiece;
+		try {
+			StringBuilder sb = new StringBuilder();
+			Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
+			while (e.hasMoreElements()) {
+				NetworkInterface ni = e.nextElement();
+				sb.append(ni.toString());
+				byte[] mac = ni.getHardwareAddress();
+				if (mac != null) {
+					ByteBuffer bb = ByteBuffer.wrap(mac);
+					try {
+						sb.append(bb.getChar());
+						sb.append(bb.getChar());
+						sb.append(bb.getChar());
+					} catch (BufferUnderflowException shortHardwareAddressException) { // NOPMD
+						// mac with less than 6 bytes. continue
+					}
+				}
+			}
+			machinePiece = sb.toString().hashCode();
+		} catch (Throwable t) {
+			// exception sometimes happens with IBM JVM, use random
+			machinePiece = (new SecureRandom().nextInt());
+		}
+		machinePiece = machinePiece & 0x00ffffff;
+
+		// mongodb processId generate logic
+		short processId;
+		try {
+			String processName = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
+			if (processName.contains("@")) {
+				processId = (short) Integer.parseInt(processName.substring(0, processName.indexOf('@')));
+			} else {
+				processId = (short) java.lang.management.ManagementFactory.getRuntimeMXBean().getName().hashCode();
+			}
+		} catch (Throwable t) {
+		    processId = (short) new SecureRandom().nextInt();
+		}
+
+		//BASE_CONN_ID = String.format("%X%X", machinePiece, processId);
+		BASE_CONN_ID = String.format("%X", processId); /// only process id
 	}
 
 	/*
@@ -148,35 +199,4 @@ public class DriverEx implements java.sql.Driver {
 	public Logger getParentLogger() throws SQLFeatureNotSupportedException {
 		throw new SQLFeatureNotSupportedException();
 	}
-
-	/**
-	 * 接続URLから設定ファイルのパラメータを抽出する
-	 * <pre>
-	 * 接続URLに設定ファイルのパラメータがあれば、ファイル名として抽出する。
-	 * パラメータがなければnullを返す。
-	 * </pre>
-	 * @param url 接続URL
-	 * @return [0]:設定ファイルのパラメータを除去した接続URL [1]:設定ファイル名
-	 */
-//	public static String[] extractSettingPath(String url) {
-//		// [0]:本来のURL [1]:設定ファイル名
-//		String[] ret = new String[2];
-//
-//		String configParam = "loggerconfig=";
-//		int bgnPos = url.toLowerCase().indexOf(configParam);
-//		if (bgnPos != -1) {
-//			String regex = "(?i)" + configParam + ".*?";
-//			int endPos = url.indexOf(";", bgnPos);
-//			if(endPos != -1) {
-//				regex += ";";
-//			}
-//			ret[0] = url.replaceAll(regex, "");
-//			ret[1] = url.substring(bgnPos + configParam.length());
-//			ret[1] = ret[1].replaceAll(";", "");
-//		} else {
-//			ret[0] = url;
-//		}
-//		return ret;
-//	}
-
 }

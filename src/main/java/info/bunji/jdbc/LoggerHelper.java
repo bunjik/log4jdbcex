@@ -57,14 +57,18 @@ public abstract class LoggerHelper {
 	/** パラメータ置換用の正規表現 */
 	private static final Pattern PARAM_REGEX = Pattern.compile("\\?");
 
+	/** connection id */
+	private final String connectionId;
+
 	/**
 	 ********************************************
 	 * @param url execute sql (for PreparedStatement or CallableStatement)
 	 ********************************************
 	 */
-	LoggerHelper(String url) {
+	LoggerHelper(String url, String connId) {
 		this.url = url;
 		logger = JdbcLoggerFactory.getLogger(url);
+		connectionId = connId;
 	}
 
 	/**
@@ -75,6 +79,14 @@ public abstract class LoggerHelper {
 	 */
 	public String getUrl() {
 		return url;
+	}
+
+	/**
+	 *
+	 * @return
+	 */
+	public String getConnectionId() {
+		return connectionId;
 	}
 
 	/**

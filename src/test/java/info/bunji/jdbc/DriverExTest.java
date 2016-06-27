@@ -34,6 +34,7 @@ public class DriverExTest extends AbstractTest {
 		driver = DriverManager.getDriver(ACCEPT_URL);
 		prop.setProperty("user", "sa");
 		prop.setProperty("password", "");
+		prop.setProperty("logging.connectionLogging", "true");
 	}
 
 	@Test

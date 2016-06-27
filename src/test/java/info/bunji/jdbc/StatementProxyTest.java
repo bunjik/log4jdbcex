@@ -43,6 +43,7 @@ public class StatementProxyTest extends AbstractTest {
 	 */
 	@Before
 	public void setUp() throws Exception {
+		super.setUp();
 		conn = DriverManager.getConnection(ACCEPT_URL, "sa", "");
 	}
 
@@ -52,6 +53,7 @@ public class StatementProxyTest extends AbstractTest {
 	@After
 	public void tearDown() throws Exception {
 		conn.close();
+		super.tearDown();
 	}
 
 	/**

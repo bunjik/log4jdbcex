@@ -35,11 +35,18 @@ public interface JdbcLogger {
 	/** success log format */
 	public static final String RETURN_MSG_FORMAT = "[executed %,4d ms] %s";
 
+	/** success log format with connection id */
+	public static final String RETURN_MSG_FORMAT_WITH_CONN = "[executed %,4d ms] [%s] %s";
+
 	/** batch log format */
 	public static final String BATCH_MSG_FORMAT = "[executed (%d/%d)] %s";
 
+	/** batch log format with connection id */
+	public static final String BATCH_MSG_FORMAT_WITH_CONN = "[executed (%d/%d)] [%s] %s";
+
+
 	/** batch success log format */
-	public static final String BATCH_RESULT_FORMAT = "[batch finished %,4d ms] (%d/%d)";
+	public static final String BATCH_RESULT_FORMAT = "[executed %,4d ms] batch (%d/%d)";
 
 	/** error log format */
 	public static final String EXCEPTION_MSG_FORMAT = "[executed %,4d ms] %s";

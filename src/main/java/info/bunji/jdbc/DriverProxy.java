@@ -22,7 +22,11 @@ import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import info.bunji.jdbc.logger.JdbcLogger;
 import info.bunji.jdbc.logger.JdbcLoggerFactory;
@@ -41,6 +45,10 @@ public class DriverProxy implements InvocationHandler {
 
 	private static final Driver DRIVER_EX = new DriverEx();
 
+	private static final String PARAM_PREFIX = "logging.";
+
+	private static final AtomicInteger counter = new AtomicInteger(0);
+
 	/*
 	 * (非 Javadoc)
 	 * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
@@ -57,14 +65,35 @@ public class DriverProxy implements InvocationHandler {
 				if (d == null) return null;
 				args[0] = getRealUrl((String)args[0]);
 
-				Connection conn = null;
 				JdbcLogger logger = JdbcLoggerFactory.getLogger((String)args[0]);
+
+				// check logging parameter
+				if (args.length > 1) {
+					Properties newProps = (Properties) args[1];
+					Properties chkProps = new Properties();
+					chkProps.putAll(newProps);
+					Map<String, Object> settings = new HashMap<String, Object>();
+					for (Entry<Object, Object> entry : chkProps.entrySet()) {
+						String key = (String)entry.getKey();
+						if (key.startsWith(PARAM_PREFIX)) {
+							settings.put(key.substring(PARAM_PREFIX.length()), entry.getValue());
+							newProps.remove(key);
+						}
+					}
+					logger.setSetting(settings);
+				}
+
+				Connection conn = null;
 				if (logger.isJdbcLoggingEnabled()) {
+					// connectionIdの生成
+					String id = String.format("%s%04d", DriverEx.BASE_CONN_ID, counter.incrementAndGet());
+					counter.compareAndSet(100, 0);
 					long start = System.currentTimeMillis();
 					try {
-						conn = ProxyFactory.wrapConnection((Connection) method.invoke(d, args), (String)args[0]);
+						ConnectionProxy connProxy = new ConnectionProxy((Connection) method.invoke(d, args), (String)args[0], id);
+						conn = ProxyFactory.getInstance().newProxyInstance(Connection.class, connProxy);
 						if (logger.isConnectionLogging()) {
-							logger.debug(String.format(JdbcLogger.RETURN_MSG_FORMAT, System.currentTimeMillis() - start, "get connection."));
+							logger.debug(String.format(JdbcLogger.RETURN_MSG_FORMAT_WITH_CONN, System.currentTimeMillis() - start, id, "get connection."));
 						}
 					} catch (Throwable t) {
 						if (logger.isConnectionLogging()) {

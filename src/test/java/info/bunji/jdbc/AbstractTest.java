@@ -21,7 +21,11 @@ import javax.sql.DataSource;
 
 import org.apache.commons.dbcp.BasicDataSource;
 import org.h2.tools.SimpleResultSet;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.TestName;
 
 /**
  * @author f.kinoshita
@@ -31,6 +35,19 @@ public abstract class AbstractTest {
 
 	public static String ACCEPT_URL = "jdbc:log4jdbcex:h2:mem:test;DB_CLOSE_DELAY=-1";
 	public static String REAL_URL   = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1";
+
+	@Rule
+	public TestName testName = new TestName();
+
+	@Before
+	public void setUp() throws Exception {
+		System.out.println("== begin " + testName.getMethodName() +" ==");
+	}
+
+	@After
+	public void tearDown() throws Exception {
+		System.out.println("== end " + testName.getMethodName() +" ==");
+	}
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {

@@ -143,8 +143,8 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 	 * @param instance
 	 * @param url
 	 */
-	StatementProxy(Statement instance, String url) {
-		super(url);
+	StatementProxy(Statement instance, String url, String connectionId) {
+		super(url, connectionId);
 		_stmt = instance;
 	}
 
@@ -154,8 +154,8 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 	 * @param url
 	 * @param sql
 	 */
-	StatementProxy(Statement instance, String url, String sql) {
-		this(instance, url);
+	StatementProxy(Statement instance, String url, String sql, String connectionId) {
+		this(instance, url, connectionId);
 		setSql(sql);
 	}
 
@@ -215,7 +215,7 @@ public class StatementProxy extends LoggerHelper implements InvocationHandler {
 				}
 */			} else if (name.equals("getConnection")){
 				// 取得したConnectionをラップする
-				ret = ProxyFactory.wrapConnection((Connection)ret, url);
+				ret = ProxyFactory.wrapConnection((Connection)ret, url, getConnectionId());
 			} else if (paramTypes.containsKey(name)) {
 				try {
 					Integer type = paramTypes.get(name);

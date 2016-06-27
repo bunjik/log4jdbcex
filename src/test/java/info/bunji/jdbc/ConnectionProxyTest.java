@@ -37,6 +37,7 @@ public class ConnectionProxyTest extends AbstractTest {
 	 */
 	@Before
 	public void setUp() throws Exception {
+		super.setUp();
 		conn = DriverManager.getConnection(ACCEPT_URL, "sa", "");
 	}
 
@@ -45,13 +46,15 @@ public class ConnectionProxyTest extends AbstractTest {
 	 */
 	@After
 	public void tearDown() throws Exception {
+		super.tearDown();
 		conn.close();
 	}
 
 	@Test
 	public void testGetUrl() {
-		ConnectionProxy proxy = new ConnectionProxy(conn, REAL_URL);
+		ConnectionProxy proxy = new ConnectionProxy(conn, REAL_URL, "testId");
 		assertThat(proxy.getUrl(), is(REAL_URL));
+		assertThat(proxy.getConnectionId(), is("testId"));
 	}
 
 	/**

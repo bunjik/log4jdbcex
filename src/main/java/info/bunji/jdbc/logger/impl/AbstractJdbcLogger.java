@@ -254,13 +254,25 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 				long elapsed = System.currentTimeMillis() - helper.getStartTime();
 				if (!helper.isExecuteBatch()) {
 					String sql = helper.dumpSql();
-					if (isLogging(sql, elapsed)) {
-						if (limitLength != -1 && limitLength < sql.length()) {
-							debug(RETURN_MSG_FORMAT, elapsed, sql.substring(0, limitLength) + "...");
-						} else {
-							debug(RETURN_MSG_FORMAT, elapsed, sql);
+					if (!isConnectionLogging()) {
+						if (isLogging(sql, elapsed)) {
+							if (limitLength != -1 && limitLength < sql.length()) {
+								debug(RETURN_MSG_FORMAT, elapsed, sql.substring(0, limitLength) + "...");
+							} else {
+								debug(RETURN_MSG_FORMAT, elapsed, sql);
+							}
+							queryHistory.add(new QueryInfo(helper, sql));
 						}
-						queryHistory.add(new QueryInfo(helper, sql));
+					} else {
+						if (isLogging(sql, elapsed)) {
+							String id = helper.getConnectionId();
+							if (limitLength != -1 && limitLength < sql.length()) {
+								debug(RETURN_MSG_FORMAT_WITH_CONN, elapsed, id, sql.substring(0, limitLength) + "...");
+							} else {
+								debug(RETURN_MSG_FORMAT_WITH_CONN, elapsed, id, sql);
+							}
+							queryHistory.add(new QueryInfo(helper.getStartTime(), -1L, sql, helper.getQueryId(), null));
+						}
 					}
 				} else if (helper.getBatchList() != null) {
 					// バッチ実行の場合

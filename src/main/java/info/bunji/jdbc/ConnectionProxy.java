@@ -23,6 +23,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 
+import info.bunji.jdbc.logger.JdbcLogger;
+import info.bunji.jdbc.logger.JdbcLoggerFactory;
+
 /**
  **********************************************************
  * implements Connection Wrapper.
@@ -42,8 +45,8 @@ public class ConnectionProxy extends LoggerHelper implements InvocationHandler {
 	 * @param url connection url
 	 **********************************************
 	 */
-	ConnectionProxy(Connection conn, String url) {
-		super(url);
+	ConnectionProxy(Connection conn, String url, String connectionId) {
+		super(url, connectionId);
 		_conn = conn;
 	}
 
@@ -59,17 +62,18 @@ public class ConnectionProxy extends LoggerHelper implements InvocationHandler {
 			String name = method.getName();
 			if (name.equals("createStatement")) {
 				Statement stmt = (Statement) method.invoke(_conn, args);
-				ret = ProxyFactory.wrapStatement(stmt, url);
+				ret = ProxyFactory.wrapStatement(stmt, url, getConnectionId());
 			} else if (name.equals("prepareStatement")) {
 				PreparedStatement stmt = (PreparedStatement) method.invoke(_conn, args);
-				ret = ProxyFactory.wrapPreparedStatement(stmt, url, args[0].toString());
+				ret = ProxyFactory.wrapPreparedStatement(stmt, url, args[0].toString(), getConnectionId());
 			} else if (name.equals("prepareCall")) {
 				CallableStatement stmt = (CallableStatement) method.invoke(_conn, args);
-				ret = ProxyFactory.wrapCallableStatement(stmt, url, args[0].toString());
+				ret = ProxyFactory.wrapCallableStatement(stmt, url, args[0].toString(), getConnectionId());
 			} else if (name.equals("close") && isConnectionLogging()) {
-				startExecute("close connection.");
+				long start  = System.currentTimeMillis();
+				JdbcLogger logger = JdbcLoggerFactory.getLogger(this.url);
 				ret = method.invoke(_conn, args);
-				reportReturned();
+				logger.debug(String.format(JdbcLogger.RETURN_MSG_FORMAT_WITH_CONN, System.currentTimeMillis() - start, getConnectionId(), "close connection."));
 			} else {
 				ret = method.invoke(_conn, args);
 			}
@@ -77,7 +81,7 @@ public class ConnectionProxy extends LoggerHelper implements InvocationHandler {
 		} catch (InvocationTargetException e) {
 			throw e.getCause();
 		} finally {
-endExecute();
+			endExecute();
 		}
 	}
 }
