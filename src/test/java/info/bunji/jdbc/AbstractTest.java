@@ -41,12 +41,12 @@ public abstract class AbstractTest {
 
 	@Before
 	public void setUp() throws Exception {
-		System.out.println("== begin " + testName.getMethodName() +" ==");
+		System.out.println("== begin " + getClass().getSimpleName() + "$" + testName.getMethodName() +" ==");
 	}
 
 	@After
 	public void tearDown() throws Exception {
-		System.out.println("== end " + testName.getMethodName() +" ==");
+		System.out.println("== end " + getClass().getSimpleName() + "$" + testName.getMethodName() +" ==");
 	}
 
 	@BeforeClass
@@ -77,6 +77,9 @@ public abstract class AbstractTest {
 			BasicDataSource ds = new BasicDataSource();
 			ds.setUrl(ACCEPT_URL);
 			ds.setUsername("sa");
+			ds.setInitialSize(3);
+			ds.setMaxIdle(2);
+			ds.setConnectionProperties("logging.connectionLogging=true");
 			ic.bind("java:comp/env/jdbc/log4jdbcDs", ds);
 
 			// init database

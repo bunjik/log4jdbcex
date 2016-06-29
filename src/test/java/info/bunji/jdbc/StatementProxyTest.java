@@ -212,8 +212,8 @@ public class StatementProxyTest extends AbstractTest {
 		Statement stmt = conn.createStatement();
 		stmt.clearBatch();
 		stmt.addBatch("INSERT into test values('aaa')");
-		stmt.addBatch("INSERT into test values('bbb')");
 		stmt.addBatch("INSERT into unknown values('bbb')");
+		stmt.addBatch("INSERT into test values('bbb')");
 		stmt.executeBatch();
 	}
 

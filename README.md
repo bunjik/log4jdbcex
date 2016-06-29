@@ -82,6 +82,29 @@ SQLのログ自体は、ロガー名：**jdbclog**のDEBUGレベルで出力さ�
 
 *※SQLでエラーが発生した場合は、上記設定に関わらず、ERRORレベルでのログ出力が行われます。*
 
+### context.xmlによる設定例:  
+
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE conent>
+      <Context>
+        <Resource
+          name="jdbc/testdb"
+          auth="Container"
+          type="javax.sql.DataSource"
+          driverClassName="org.h2.Driver"
+          url="jdbc:log4jdbcex:h2:mem:test;DB_CLOSE_DELAY=-1"
+          username="sa"
+          password=""
+          logging.timeThreshold="0"  
+          logging.acceptFilter=".*"  
+          logging.ignoreFilter="SELECT 1"  
+          logging.historyCount="30"  
+          logging.format="true"
+          logging.limitLength="500"  
+          logging.connectionLogging="true"  
+        />
+    </Context>
+
 ### 設定ファイル例:  
 
         {  

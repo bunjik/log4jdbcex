@@ -252,45 +252,33 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 		try {
 			if (isJdbcLoggingEnabled()) {
 				long elapsed = System.currentTimeMillis() - helper.getStartTime();
+				StringBuilder logMsg = new StringBuilder(String.format(MSG_FORMAT, elapsed));
+				if (isConnectionLogging()) {
+					logMsg.append("[").append(helper.getConnectionId()).append("] ");
+				}
+
 				if (!helper.isExecuteBatch()) {
 					String sql = helper.dumpSql();
-					if (!isConnectionLogging()) {
-						if (isLogging(sql, elapsed)) {
-							if (limitLength != -1 && limitLength < sql.length()) {
-								debug(RETURN_MSG_FORMAT, elapsed, sql.substring(0, limitLength) + "...");
-							} else {
-								debug(RETURN_MSG_FORMAT, elapsed, sql);
-							}
-							queryHistory.add(new QueryInfo(helper, sql));
+					if (isLogging(sql, elapsed)) {
+						if (limitLength != -1 && limitLength < sql.length()) {
+							sql = sql.substring(0, limitLength) + "...";
 						}
-					} else {
-						if (isLogging(sql, elapsed)) {
-							String id = helper.getConnectionId();
-							if (limitLength != -1 && limitLength < sql.length()) {
-								debug(RETURN_MSG_FORMAT_WITH_CONN, elapsed, id, sql.substring(0, limitLength) + "...");
-							} else {
-								debug(RETURN_MSG_FORMAT_WITH_CONN, elapsed, id, sql);
-							}
-							queryHistory.add(new QueryInfo(helper.getStartTime(), -1L, sql, helper.getQueryId(), null));
-						}
+						debug(logMsg.append(sql).toString());
+						queryHistory.add(new QueryInfo(helper.getStartTime(), -1L, sql, helper.getQueryId(), null));
 					}
 				} else if (helper.getBatchList() != null) {
-					// バッチ実行の場合
 					int i = 1;
 					int cnt = helper.getBatchList().size();
 					for (String sql : helper.getBatchList()) {
 						if (isLogging(sql, elapsed)) {
 							if (limitLength != -1 && limitLength < sql.length()) {
-								debug(BATCH_MSG_FORMAT, i, cnt, sql.substring(0, limitLength) + "...");
-							} else {
-								debug(BATCH_MSG_FORMAT, i, cnt, sql);
+								sql = sql.substring(0, limitLength) + "...";
 							}
+							debug(logMsg + "(" + i + "/" + cnt + ") " + sql);
+							//debug(logMsg + sql);
 							queryHistory.add(new QueryInfo(helper.getStartTime(), -1L, sql, helper.getQueryId(), null));
 						}
 						i++;
-					}
-					if (timeThreshold <= elapsed || elapsed < 0) {
-						debug(BATCH_RESULT_FORMAT, elapsed, cnt, cnt);
 					}
 				}
 			}
@@ -307,28 +295,39 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 	public void reportException(LoggerHelper helper, Throwable t, Object... params) {
 		try {
 			if (isJdbcLoggingEnabled()) {
+				long elapsed = System.currentTimeMillis() - helper.getStartTime();
+				StringBuilder logMsg = new StringBuilder(String.format(MSG_FORMAT, elapsed));
+				if (isConnectionLogging()) {
+					logMsg.append("[").append(helper.getConnectionId()).append("] ");
+				}
+
 				// バッチ実行時は例外から処理結果を取得して出力
 				if (t instanceof BatchUpdateException) {
 					int[] ret = ((BatchUpdateException)t).getUpdateCounts();
-					long elapsed = System.currentTimeMillis() - helper.getStartTime();
 					List<String> list = helper.getBatchList();
 					for (int i = 0; i < ret.length; i++) {
 						String sql = list.get(i);
 						if (ret[i] != Statement.EXECUTE_FAILED) {
 							if (isLogging(sql, -1)) {
-								debug(BATCH_MSG_FORMAT, i + 1, list.size(), sql);
+								if (limitLength != -1 && limitLength < sql.length()) {
+									sql = sql.substring(0, limitLength) + "...";
+								}
+								debug(logMsg + "(" + (i + 1) + "/" + list.size() + ") " + sql);
+								//debug(logMsg + sql);
 							}
+							queryHistory.add(new QueryInfo(helper.getStartTime(), -1L, sql, helper.getQueryId(), null));
 						} else {
 							// エラー時は条件にかかわらず出力
-							error(String.format(BATCH_MSG_FORMAT, i + 1, list.size(), sql), t);
+							error(logMsg + "(" + (i + 1) + "/" + list.size() + ") " + sql, t);
+							//error(logMsg + sql, t);
+							queryHistory.add(new QueryInfo(helper, sql, t));
+							break;
 						}
 					}
-					debug(BATCH_RESULT_FORMAT, elapsed, ret.length, ret.length);
 				} else {
+					// エラー時は条件にかかわらず出力
 					String sql = helper.dumpSql();
-					long now = System.currentTimeMillis();
-					long elapsed = now - helper.getStartTime();
-					error(String.format(EXCEPTION_MSG_FORMAT, elapsed, sql), t);
+					error(logMsg.append(sql).toString(), t);
 					queryHistory.add(new QueryInfo(helper, sql, t));
 				}
 			}
