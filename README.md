@@ -100,6 +100,8 @@ SQLのログ自体は、ロガー名：**jdbclog**のDEBUGレベルで出力さ�
         />
     </Context>
 
+※tomcat dbcp 利用時は**driverClassName**に**info.bunji.jdbc.DriverEx**を指定する必要があります。
+
 ### 設定ファイル例:  
 
         {  
