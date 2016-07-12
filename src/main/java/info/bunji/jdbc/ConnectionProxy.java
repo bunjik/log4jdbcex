@@ -64,10 +64,24 @@ public class ConnectionProxy extends LoggerHelper implements InvocationHandler {
 				Statement stmt = (Statement) method.invoke(_conn, args);
 				ret = ProxyFactory.wrapStatement(stmt, url, getConnectionId());
 			} else if (name.equals("prepareStatement")) {
-				PreparedStatement stmt = (PreparedStatement) method.invoke(_conn, args);
+				PreparedStatement stmt = null;
+				try {
+					startExecute((String) args[0]);
+					stmt = (PreparedStatement) method.invoke(_conn, args);
+				} catch (Exception e) {
+					reportException(e.getCause());
+					throw e;
+				}
 				ret = ProxyFactory.wrapPreparedStatement(stmt, url, args[0].toString(), getConnectionId());
 			} else if (name.equals("prepareCall")) {
-				CallableStatement stmt = (CallableStatement) method.invoke(_conn, args);
+				CallableStatement stmt = null;
+				try {
+					startExecute((String) args[0]);
+					stmt = (CallableStatement) method.invoke(_conn, args);
+				} catch (Exception e) {
+					reportException(e.getCause());
+					throw e;
+				}
 				ret = ProxyFactory.wrapCallableStatement(stmt, url, args[0].toString(), getConnectionId());
 			} else if (name.equals("close") && isConnectionLogging()) {
 				long start  = System.currentTimeMillis();

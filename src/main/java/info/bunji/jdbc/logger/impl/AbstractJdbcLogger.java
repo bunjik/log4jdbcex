@@ -264,22 +264,22 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 							sql = sql.substring(0, limitLength) + "...";
 						}
 						debug(logMsg.append(sql).toString());
-						queryHistory.add(new QueryInfo(helper.getStartTime(), -1L, sql, helper.getQueryId(), null));
+						queryHistory.add(new QueryInfo(helper, sql, null));
 					}
 				} else if (helper.getBatchList() != null) {
-					int i = 1;
+					int i = 0;
 					int cnt = helper.getBatchList().size();
 					for (String sql : helper.getBatchList()) {
+						i++;
 						if (isLogging(sql, elapsed)) {
 							if (limitLength != -1 && limitLength < sql.length()) {
 								sql = sql.substring(0, limitLength) + "...";
 							}
 							debug(logMsg + "(" + i + "/" + cnt + ") " + sql);
-							//debug(logMsg + sql);
 							queryHistory.add(new QueryInfo(helper.getStartTime(), -1L, sql, helper.getQueryId(), null));
 						}
-						i++;
 					}
+					//debug(logMsg.append("batch finished. ") + "(" + i + "/" + cnt + ")");
 				}
 			}
 		} catch (Throwable t) {
@@ -305,25 +305,26 @@ public abstract class AbstractJdbcLogger implements JdbcLogger {
 				if (t instanceof BatchUpdateException) {
 					int[] ret = ((BatchUpdateException)t).getUpdateCounts();
 					List<String> list = helper.getBatchList();
-					for (int i = 0; i < ret.length; i++) {
+					int i = 0;
+					for (int errRet : ret) {
 						String sql = list.get(i);
-						if (ret[i] != Statement.EXECUTE_FAILED) {
+						i++;
+						if (errRet != Statement.EXECUTE_FAILED) {
 							if (isLogging(sql, -1)) {
 								if (limitLength != -1 && limitLength < sql.length()) {
 									sql = sql.substring(0, limitLength) + "...";
 								}
-								debug(logMsg + "(" + (i + 1) + "/" + list.size() + ") " + sql);
+								debug(logMsg + "(" + i + "/" + list.size() + ") " + sql);
 								//debug(logMsg + sql);
 							}
 							queryHistory.add(new QueryInfo(helper.getStartTime(), -1L, sql, helper.getQueryId(), null));
 						} else {
 							// エラー時は条件にかかわらず出力
-							error(logMsg + "(" + (i + 1) + "/" + list.size() + ") " + sql, t);
-							//error(logMsg + sql, t);
-							queryHistory.add(new QueryInfo(helper, sql, t));
-							break;
+							error(logMsg + "(" + i + "/" + list.size() + ") " + sql, t);
+							queryHistory.add(new QueryInfo(helper.getStartTime(), -1L, sql, helper.getQueryId(), t));
 						}
 					}
+					//debug(logMsg.append("batch finished. ") + "(" + i + "/" + list.size() + ")");
 				} else {
 					// エラー時は条件にかかわらず出力
 					String sql = helper.dumpSql();

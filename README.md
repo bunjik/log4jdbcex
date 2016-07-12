@@ -78,6 +78,7 @@ SQLのログ自体は、ロガー名：**jdbclog**のDEBUGレベルで出力さ�
 
 * connectionLogging (since:0.3.4)  
 	Connectionの取得、クローズ時にログを出力します。  
+	また、Connection毎にユニークなIDを付与し、SQL実行時にIDも合わせて出力します。  
 	未指定時のデフォルトは、**false**(出力しない)です。  
 
 *※SQLでエラーが発生した場合は、上記設定に関わらず、ERRORレベルでのログ出力が行われます。*
@@ -91,17 +92,11 @@ SQLのログ自体は、ロガー名：**jdbclog**のDEBUGレベルで出力さ�
           name="jdbc/testdb"
           auth="Container"
           type="javax.sql.DataSource"
-          driverClassName="org.h2.Driver"
+          driverClassName="info.bunji.jdbc.DriverEx"
           url="jdbc:log4jdbcex:h2:mem:test;DB_CLOSE_DELAY=-1"
           username="sa"
           password=""
-          logging.timeThreshold="0"  
-          logging.acceptFilter=".*"  
-          logging.ignoreFilter="SELECT 1"  
-          logging.historyCount="30"  
-          logging.format="true"
-          logging.limitLength="500"  
-          logging.connectionLogging="true"  
+          connectionProperties="logging.connectionLogging=true;logging.limitLength=200"
         />
     </Context>
 
@@ -114,7 +109,7 @@ SQLのログ自体は、ロガー名：**jdbclog**のDEBUGレベルで出力さ�
         		ignoreFilter : "SELECT 1",  
         		historyCount : 30,  
         		format : true,
-        		limitLength : 500,  
+        		limitLength : 200,  
         		connectionLogging : false  
         	},
         	"sampleJndi":  {  
