@@ -3,8 +3,8 @@
  */
 package info.bunji.jdbc.specifics;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 import java.sql.Date;
 import java.text.DateFormat;

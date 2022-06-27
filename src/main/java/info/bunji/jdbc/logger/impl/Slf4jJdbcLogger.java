@@ -18,14 +18,12 @@ package info.bunji.jdbc.logger.impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import info.bunji.jdbc.logger.JdbcLogger;
-
 /**
  * logger implementation for slf4j
  *
  * @author f.kinoshia
  */
-public class Slf4jJdbcLogger extends AbstractJdbcLogger implements JdbcLogger {
+public class Slf4jJdbcLogger extends AbstractJdbcLogger {
 
 	private final Logger debugLogger;
 

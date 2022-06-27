@@ -16,9 +16,8 @@
 package info.bunji.jdbc.rest;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Modifier;
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +35,6 @@ import javax.sql.DataSource;
 
 import info.bunji.jdbc.logger.JdbcLogger;
 import info.bunji.jdbc.logger.JdbcLoggerFactory;
-import info.bunji.jdbc.util.ClassScanUtil;
 
 /**
  *
@@ -78,22 +76,19 @@ public class RestApiServlet extends HttpServlet {
 			e.printStackTrace();
 		}
 
-		try {
-			// search RestApi classes
-			List<Class<?>> classes = ClassScanUtil.findClassesFromPackage(getClass().getPackage().getName());
-			for (Class<?> clazz : classes) {
-				if (!Modifier.isAbstract(clazz.getModifiers()) &&
-						!clazz.isInterface() && RestApi.class.isAssignableFrom(clazz) ) {
-					Constructor<?> c = clazz.getConstructor(ServletContext.class);
-					RestApi api = (RestApi) c.newInstance(context);
-					// 明示的にinit() を呼び出す
-					api.init();
-					apiMap.put(api.getApiName(), api);
-				}
+		List<RestApi> apiList = new ArrayList<>();
+		apiList.add(new HistoryApi(context));
+		apiList.add(new ResourceApi(context));
+		apiList.add(new RunningQueriesApi(context));
+		apiList.add(new SettingApi(context));
+		apiList.forEach(api -> {
+			try {
+				api.init();
+				apiMap.put(api.getApiName(), api);
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		});
 	}
 
 	/* (非 Javadoc)

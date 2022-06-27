@@ -16,7 +16,7 @@ import java.util.List;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import javax.naming.NamingException;
+import javax.naming.NameNotFoundException;
 import javax.sql.DataSource;
 
 import org.apache.commons.dbcp.BasicDataSource;
@@ -33,8 +33,13 @@ import org.junit.rules.TestName;
  */
 public abstract class AbstractTest {
 
-	public static String ACCEPT_URL = "jdbc:log4jdbcex:h2:mem:test;DB_CLOSE_DELAY=-1";
-	public static String REAL_URL   = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1";
+	public static final String ACCEPT_URL = "jdbc:log4jdbcex:h2:mem:test;DB_CLOSE_DELAY=-1";
+	public static final String REAL_URL   = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1";
+
+	static {
+		System.setProperty(Context.INITIAL_CONTEXT_FACTORY, "org.apache.naming.java.javaURLContextFactory");
+		System.setProperty(Context.URL_PKG_PREFIXES, "org.apache.naming");
+	}
 
 	@Rule
 	public TestName testName = new TestName();
@@ -52,38 +57,41 @@ public abstract class AbstractTest {
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 
-		// create InitialContext
-		System.setProperty(Context.INITIAL_CONTEXT_FACTORY, "org.apache.naming.java.javaURLContextFactory");
-		System.setProperty(Context.URL_PKG_PREFIXES, "org.apache.naming");
-		InitialContext ic = new InitialContext();
-
 		try {
+			// create InitialContext
+			InitialContext ic = new InitialContext();
 			try {
 				Class.forName("org.h2.Driver");
 				Class.forName("info.bunji.jdbc.DriverEx");
-			} catch(Exception e) {}
+			} catch(Exception e) {
+				//e.printStackTrace();
+			}
 
-			ic.lookup("java:comp/env/jdbc");
+			try {
+				ic.lookup("java:comp/env/jdbc");
+			} catch (NameNotFoundException nnfe) {
+				System.out.println("initializing context.");
+				// not initialized.
+				ic.createSubcontext("java:");
+				ic.createSubcontext("java:comp");
+				ic.createSubcontext("java:comp/env");
+				ic.createSubcontext("java:comp/env/jdbc");
 
-			// already initialized.
+				// bind DataSource
+				BasicDataSource ds = new BasicDataSource();
+				ds.setUrl(ACCEPT_URL);
+				ds.setUsername("sa");
+				ds.setInitialSize(3);
+				ds.setMaxIdle(2);
+				ds.setConnectionProperties("logging.connectionLogging=true");
+				ic.bind("java:comp/env/jdbc/log4jdbcDs", ds);
+			}
+		} catch (Throwable t) {
+			t.printStackTrace();
+		}
 
-		} catch (NamingException ne) {
-			ic.createSubcontext("java:");
-			ic.createSubcontext("java:comp");
-			ic.createSubcontext("java:comp/env");
-			ic.createSubcontext("java:comp/env/jdbc");
-
-			// bind DataSource
-			BasicDataSource ds = new BasicDataSource();
-			ds.setUrl(ACCEPT_URL);
-			ds.setUsername("sa");
-			ds.setInitialSize(3);
-			ds.setMaxIdle(2);
-			ds.setConnectionProperties("logging.connectionLogging=true");
-			ic.bind("java:comp/env/jdbc/log4jdbcDs", ds);
-
-			// init database
-			Connection c = DriverManager.getConnection(REAL_URL, "sa", "");
+		// init database
+		try (Connection c = DriverManager.getConnection(REAL_URL, "sa", "")) {
 			Statement stmt = c.createStatement();
 
 			stmt.execute("drop table if exists test");
@@ -99,8 +107,6 @@ public abstract class AbstractTest {
 
 			stmt.execute("create alias if not exists testCall FOR \"" +
 					AbstractTest.class.getName() + ".testCall\"");
-
-			c.close();
 		}
 	}
 

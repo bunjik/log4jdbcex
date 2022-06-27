@@ -15,24 +15,13 @@
  */
 package info.bunji.jdbc.util;
 
-import org.hibernate.engine.jdbc.internal.BasicFormatterImpl;
-import org.hibernate.engine.jdbc.internal.Formatter;
+import com.github.vertical_blank.sqlformatter.SqlFormatter;
 
 /**
  *
  * @author f.kinoshita
  */
 public class FormatUtils {
-
-	private static Formatter formatter = null;
-
-	static {
-		try {
-			formatter = new BasicFormatterImpl();
-		} catch (Exception e) {
-			// do nothing.
-		}
-	}
 
 	/**
 	 **********************************************
@@ -44,9 +33,7 @@ public class FormatUtils {
 	public static String formatSql(final String sql) {
 		String retSql = sql;
 		try {
-			if (formatter != null) {
-				retSql = formatter.format(sql).trim();
-			}
+			retSql = SqlFormatter.format(sql);
 		} catch (Exception e) {
 			// not formated.
 		}

@@ -3,8 +3,8 @@
  */
 package info.bunji.jdbc.rest;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasEntry;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;

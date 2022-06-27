@@ -3,8 +3,10 @@
  */
 package info.bunji.jdbc.logger.impl;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 
 import org.junit.Test;
 
@@ -200,7 +202,7 @@ public class QueryInfoTest {
 
 		assertThat(qi1.equals(qi2), is(true));
 
-		assertThat(qi1.equals("aaa"), is(false));
+		assertThat(qi1 == qi2, is(false));
 	}
 
 	/**

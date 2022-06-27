@@ -3,8 +3,9 @@
  */
 package info.bunji.jdbc.logger.impl;
 
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.fail;
 
 import org.junit.Before;
 import org.junit.Test;

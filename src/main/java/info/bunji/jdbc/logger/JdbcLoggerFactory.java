@@ -21,7 +21,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -33,9 +32,6 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 import info.bunji.jdbc.DriverEx;
-import info.bunji.jdbc.logger.impl.CommonsLoggingJdbcLogger;
-import info.bunji.jdbc.logger.impl.JdkJdbcLogger;
-import info.bunji.jdbc.logger.impl.Log4jJdbcLogger;
 import info.bunji.jdbc.logger.impl.Slf4jJdbcLogger;
 import net.arnx.jsonic.JSON;
 
@@ -124,24 +120,31 @@ public class JdbcLoggerFactory {
 	 ********************************************
  	 */
 	private Constructor<?> getLoggerConstructor() {
-		// 利用可能なLoggingライブラリ
-		Map<String, Class<? extends JdbcLogger>> checkLogger = new LinkedHashMap<String, Class<? extends JdbcLogger>>() {{
-			put("org.slf4j.Logger", Slf4jJdbcLogger.class);
-			put("org.apache.commons.logging.Log", CommonsLoggingJdbcLogger.class);
-			put("org.apache.log4j.Logger", Log4jJdbcLogger.class);
-			put("java.util.logging.Logger", JdkJdbcLogger.class);
-		}};
+		// // 利用可能なLoggingライブラリ
+		// Map<String, Class<? extends JdbcLogger>> checkLogger = new LinkedHashMap<String, Class<? extends JdbcLogger>>() {{
+		// 	put("org.slf4j.Logger", Slf4jJdbcLogger.class);
+		// 	put("org.apache.commons.logging.Log", CommonsLoggingJdbcLogger.class);
+		// 	put("org.apache.log4j.Logger", Log4jJdbcLogger.class);
+		// 	put("java.util.logging.Logger", JdkJdbcLogger.class);
+		// }};
 
-		// find use logger
+		// // find use logger
+		// Constructor<?> c = null;
+		// for (Entry<String, Class<? extends JdbcLogger>> entry : checkLogger.entrySet()) {
+		// 	try {
+		// 		Class.forName(entry.getKey());
+		// 		c = entry.getValue().getConstructor(String.class);
+		// 		break;
+		// 	} catch (Throwable t) {
+		// 		printThrowable(t);
+		// 	}
+		// }
+		// return c;
 		Constructor<?> c = null;
-		for (Entry<String, Class<? extends JdbcLogger>> entry : checkLogger.entrySet()) {
-			try {
-				Class.forName(entry.getKey());
-				c = entry.getValue().getConstructor(String.class);
-				break;
-			} catch (Throwable t) {
-				printThrowable(t);
-			}
+		try {
+			c = Slf4jJdbcLogger.class.getConstructor(String.class);
+		} catch (Throwable t) {
+			printThrowable(t);
 		}
 		return c;
 	}

@@ -1,7 +1,10 @@
 package info.bunji.jdbc;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.fail;
 
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -11,17 +14,10 @@ import java.util.Properties;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
-import info.bunji.jdbc.logger.JdbcLoggerFactory;
 
 /**
  * @author f.kinoshita
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({JdbcLoggerFactory.class})
 public class DriverExTest extends AbstractTest {
 
 	private static Driver driver;
